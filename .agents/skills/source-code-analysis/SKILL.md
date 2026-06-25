@@ -1,0 +1,286 @@
+---
+name: source-code-analysis
+description: Use this skill for static Acumatica source-code analysis during Support Request investigation when a root cause remains unclear after Jira title/description/comments, explicit/similar Jira items, and database analysis is unavailable, impossible, or inconclusive. Resolve the local product repository, derive and verify the item-specific version branch, perform necessary local Git operations to inspect that branch, inspect relevant code paths, and propose likely root causes or reproduction scenarios.
+---
+
+# Source Code Analysis Skill
+
+## Purpose
+
+Use this skill to perform static source-code analysis for an Acumatica Support Request when higher-signal evidence did not establish the root cause.
+
+The goal is to identify likely product code paths, safeguards, state transitions, missing checks, version-specific behavior, and plausible reproduction sequences. Code analysis can strongly support a hypothesis, but it does not prove the current customer's data state unless paired with Jira, SQL, Wiki, PR, or other direct evidence.
+
+Use `acumatica-knowledge-access` as optional reference enrichment when indexed DAC fields, relationships, API/GI surfaces, or Help Wiki behavior can help identify likely source entry points or affected paths. If `acumatica-knowledge` is unavailable, continue source analysis with Jira, local docs, code search, SQL evidence, and related items; mention the limitation only when the missing reference context could materially affect confidence.
+
+## Trigger Point
+
+Run this skill only after the main issue context has been exhausted or cannot be used:
+
+- Jira title, description, and comments do not establish root cause;
+- explicit linked issues and `jira-similar-search` do not provide a validated cause or workaround;
+- database analysis is impossible, unavailable, too incomplete, or does not confirm/refute the hypotheses;
+- standard product logic is still a plausible cause.
+
+Skip this skill when:
+
+- the issue is already confirmed as setup/customer data/customization and code cannot change the conclusion;
+- the request only asks for a simple data check or workaround already supported by evidence;
+- the local product repository or required branch cannot be safely resolved and the limitation is enough to answer the user.
+
+## Repository Resolution
+
+Default repository path:
+
+```text
+code
+```
+
+Before any Git or source-code evidence:
+
+1. Verify that `code` exists and contains `.git`.
+2. If `code` is missing or is not a Git repository, ask the user for the correct repository path.
+3. Do not run Git commands from the agent workspace root unless that root is itself the product repository.
+4. Use `git -C code ...` or set the shell working directory to `code`.
+
+For Support Request investigation in this repository, treat the local product repository as an analysis checkout. Code inspection is read-only with respect to product source: do not edit product code as part of diagnosis and never push. Local Git operations needed to reach the item-specific branch are allowed and should be requested explicitly when sandbox, identity, or ownership restrictions require user-context execution.
+
+Useful checks:
+
+```powershell
+Test-Path -LiteralPath code\.git
+git -C code status --short --branch
+git -C code branch --show-current
+```
+
+If the worktree has uncommitted changes, inspect them before switching. In the support-case investigation checkout, dirty state is not automatically a blocker: if the changes are unrelated or only prevent switching to the correct branch, use local Git operations needed to reach the correct branch after clearly stating the intent. Do not preserve or create product-source edits as part of the investigation.
+
+## Branch Selection
+
+Use the system diagnostics branch-derivation rule when version-specific source analysis is needed. Use `system-diagnostics-analysis` first when DB version, customization, upgrade chronology, or schema discovery can materially affect branch selection or confidence.
+
+Branch derivation rule:
+
+```text
+YY.RRR.xxxx or YY.RRR.xxxx-n -> 20YYrRRR
+```
+
+Example:
+
+```text
+25.201.0213-2 -> 2025r201
+25.201.0213   -> 2025r201
+```
+
+Version source priority:
+
+1. If a customer backup is available and the DB `[Version]` value was retrieved, use the database version for backup-specific code verification.
+2. If DB version is unavailable, use Jira `Found in`.
+3. If Jira and DB base versions differ, report the mismatch and use the DB version for backup-specific code paths.
+4. If neither version is available, inspect the current branch only as general product-code context and report the limitation.
+
+Before relying on code evidence:
+
+- verify the current local branch;
+- check whether the derived branch exists locally or remotely;
+- switch to the derived branch or another branch proven by Jira/DB/PR evidence;
+- report branch mismatch or unavailable branch in the analysis.
+
+Static analysis on the wrong branch can still be useful for orientation, but must not be presented as version-specific evidence. Do not stop at the current branch just because Git needs additional local setup; request the needed Git operation and continue unless the branch cannot be resolved.
+
+## Safe Git Practices
+
+Allowed normal checks:
+
+```powershell
+git -C code status --short --branch
+git -C code branch --show-current
+git -C code branch --list <branch>
+git -C code branch -r --list *<branch>
+```
+
+Use `git fetch` only when remote branch discovery is needed and the environment allows it.
+
+If Git refuses to operate because of `safe.directory` / dubious ownership, request user-context execution instead of treating source analysis as blocked. Prefer a one-command override when possible:
+
+```powershell
+git -c safe.directory=<absolute-path-to-code-checkout> -C code status --short --branch
+```
+
+If repeated Git commands are needed, request adding the analysis checkout as a safe directory:
+
+```powershell
+git config --global --add safe.directory <absolute-path-to-code-checkout>
+```
+
+Before switching:
+
+```powershell
+git -C code status --short
+```
+
+If clean and the branch exists:
+
+```powershell
+git -C code switch <derived-branch>
+```
+
+If dirty state blocks switching in the support-case analysis checkout, local cleanup is acceptable when it is required to inspect the correct code version and the user/project policy allows it. First state what will be discarded or moved, then use the narrowest local Git operation that reaches the needed branch, such as `git stash push -u`, `git restore`, `git clean`, or `git reset --hard`. Never push, merge to shared branches, or create product-code changes as part of the analysis.
+
+Outside this support-case investigation checkout, do not use destructive Git commands such as `reset --hard`, `checkout -- .`, or clean operations unless the user explicitly requests them.
+
+## Static Analysis Entry Points
+
+Start from the strongest clues already collected:
+
+- screen ID: `PM301000`, `AP301000`, `AR301000`, etc.;
+- exact error message or UI text;
+- graph, DAC, table, field, action, event handler, workflow state, or report name;
+- process name: billing, allocation, release, reverse, reclassify, retainage, transfer, import, recognition;
+- document chain: AP bill, AR invoice, GL batch, PMTran, INTran, PO receipt, SO shipment;
+- setup values and flags: billable, released, reversed, hold, non-project, account group, cost code, project task;
+- customization names only as context unless custom source is available.
+
+When those clues are incomplete, optionally use `acumatica-knowledge-access` to discover exact DACs, fields, related DACs, API/GI entities, and Help Wiki behavior before searching source. Open exact objects/pages after search before relying on them; do not block if unavailable.
+
+Use `rg` first:
+
+```powershell
+rg -n "PM301000|Project Transactions|exact error text" code
+rg -n "class .*Entry|PXAction|PXOverride|RowPersisting|FieldDefaulting" code\WebSites code\Pure code\DatabaseModel
+rg -n "PMTran|AccountGroupID|Billable|CostCodeID|TaskID" code\WebSites code\Pure code\DatabaseModel
+```
+
+Prefer exact strings before broad class or table searches. If exact strings are localized or generated, search resource files, constants, exception keys, and UI labels.
+
+## Acumatica Code-Path Heuristics
+
+Follow the product flow from UI entry point to persisted data:
+
+1. Screen or report definition: identify graph, primary DAC/view, actions, and visible fields.
+2. Graph and graph extensions: inspect action handlers, release/reverse/reclass methods, delegates, PXLongOperation usage, and extension override order.
+3. DAC and DAC extensions: inspect defaults, formulas, selectors, attributes, persisted fields, and projections.
+4. Event handlers: inspect `FieldDefaulting`, `FieldUpdated`, `RowSelected`, `RowPersisting`, `RowUpdated`, and `RowPersisted`.
+5. Workflow: inspect state transitions, action availability, and guards when the issue depends on status or action order.
+6. Services/helpers: inspect shared methods that generate related documents or transactions.
+7. Schema reference: use `DatabaseModel` / `Pure/DatabaseModel` for version-specific tables and columns when docs are insufficient.
+8. Tests/specs: inspect tests when they exist for the suspected flow, especially around regressions and edge cases.
+
+For Projects/Construction cases, pay special attention to:
+
+- AP/AR/GL/PM/IN/PO/SO document-chain creation;
+- original vs reversing transaction symmetry;
+- reclassification and reversal paths;
+- billable/non-billable propagation;
+- account and account-group derivation;
+- project, task, cost code, inventory item propagation;
+- retainage, commitment, billing, allocation, and revenue-budget logic;
+- release-time vs entry-time defaults;
+- feature flags and setup conditions.
+
+## Analysis Method
+
+Use a narrow, evidence-driven loop:
+
+1. Name the current hypothesis and the fact that would make it true.
+2. Identify the likely entry point from screen/action/process/document flow.
+3. Trace the write path to the affected field, status, relation, or generated document.
+4. Trace reversal/reclass/release paths separately from original creation paths.
+5. Inspect guard conditions, defaults, null handling, feature checks, and branch-specific behavior.
+6. Look for asymmetry: a value set in original creation but not in reversal, correction, import, mass process, or long operation path.
+7. Compare expected behavior from Jira/docs with actual code branches.
+8. Stop when code can no longer change the hypothesis or when the next required evidence is data/runtime-only.
+
+Do not read broad directories without a concrete clue. Use small targeted searches, then open the relevant files.
+
+## Reproduction Scenario Output
+
+When code suggests a plausible reproduction path, state it as a hypothesis unless already validated.
+
+Include:
+
+- screen/process/action;
+- setup preconditions;
+- required document state;
+- action order;
+- field values that trigger the branch;
+- expected incorrect code path;
+- what SQL/Jira/customer data would confirm it.
+
+Example shape:
+
+```text
+Hypothesized reproduction:
+1. Create an AP bill linked to a project task with <setup condition>.
+2. Release it so PMTran is generated through <method/class>.
+3. Reverse or reclassify through <action>.
+4. The reversal path copies <field A> but does not recompute <field B>, so billing selection later treats the line as <state>.
+Validation: compare original/reversal PMTran rows for <fields>.
+```
+
+## Root-Cause Confidence From Code
+
+Use confidence carefully:
+
+- **Confirmed**: code evidence plus current-case evidence proves the same path occurred.
+- **Likely**: code contains a clear defect or missing branch matching the Jira symptom, but current-case data/runtime evidence is incomplete.
+- **Unclear**: code search found possible paths but no decisive defect or the branch/version/source is uncertain.
+
+Static code evidence alone normally supports **Likely**, not **Confirmed**, unless the Jira item itself provides a deterministic reproduction that the code directly explains.
+
+## Source-Code Evidence Presentation
+
+When citing code in the support report, make each source-code finding self-contained enough to read without opening the source file.
+
+Include for each finding:
+
+- inspected branch or commit; if all findings use the same branch, state it once at the start of the section;
+- full repository-relative file path;
+- class, method, action, event handler, workflow element, or helper name when applicable;
+- exact line number or compact line range from the inspected branch;
+- short verbatim code excerpt in a fenced code block;
+- concise explanation of what the excerpt proves or only suggests;
+- limitations, especially branch mismatch, missing runtime data, uninspected customization code, or unvalidated database state.
+
+Keep excerpts focused, usually 5-25 lines. If a larger method matters, cite several small excerpts instead of pasting the full method. Do not rewrite the code inside excerpts; use `...` to mark omitted lines and state when the excerpt is shortened.
+
+Do not cite only a source link or file path when source code is material evidence for the conclusion.
+
+Example shape:
+
+````md
+Code evidence: `code/PX.Objects/PM/PMRegisterEntry.cs`, `ReleaseDocument`, lines 421-438, branch `2025r201`.
+
+```csharp
+protected virtual void ReleaseDocument(PMRegister doc)
+{
+    ...
+    tran.Billable = source.Billable;
+    tran.AccountGroupID = source.AccountGroupID;
+}
+```
+
+This supports the hypothesis that the release path copies `Billable` from the source transaction instead of recalculating it. It does not confirm that the customer document used this path without SQL or Jira reproduction evidence.
+````
+
+## Report Guidance
+
+In the support report, keep code findings concise:
+
+```text
+Code path checked: <branch or commit>, <files/classes/methods>
+Evidence: <full repository-relative file path>, <class/method/action/event>, <lines>, <short code excerpt>
+Finding: <what the code does>
+Impact on hypothesis: supports / weakens / rules out <hypothesis>
+Limitation: <branch mismatch, no DB validation, customization unknown, etc.>
+```
+
+Reference exact files/classes/methods and lines. Include short code excerpts for material findings, but do not paste long methods or unrelated blocks.
+
+If source analysis was skipped, state why:
+
+```text
+Not run because DB evidence already confirmed root cause.
+Not run because expected branch 2025r201 was unavailable locally.
+Not run because the issue is confirmed customization-specific and standard product code cannot answer it.
+```

@@ -1,0 +1,26 @@
+# Local product checkout.
+/code/*
+!/code/.gitkeep
+
+# Local investigation and handoff notes.
+/.session-notes/
+/session-notes/
+
+# Local environment and secrets.
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files.
+*.log
+*.tmp
+*.temp
+/.tmp/
+/tmp/
+/temp/
+
+# Editor and OS metadata.
+/.vscode/
+/.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "resourceProxy": {
+    "serverName": "PowerShell DB Proxy Server",
+    "logRequests": true
+  },
+  "http": {
+    "baseUrl": "http://127.0.0.1:8765",
+    "requestTimeoutSec": 45
+  }
+}

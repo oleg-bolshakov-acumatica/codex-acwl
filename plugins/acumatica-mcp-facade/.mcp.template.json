@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "powershell-mcp-facade": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "RemoteSigned",
+        "-File",
+        "${PROJECT_DIR}\\scripts\\Start-McpServer.ps1"
+      ],
+      "cwd": "${PROJECT_DIR}"
+    },
+    "acumatica-knowledge": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${PROJECT_DIR}\\scripts\\Start-StreamableHttpMcpProxy.ps1",
+        "-Url",
+        "https://mcp-knowledge.acutools.net/mcp"
+      ],
+      "cwd": "${PROJECT_DIR}"
+    },
+    "jira-internal": {
+      "type": "http",
+      "url": "https://jmcp.acumatica.com/mcp"
+    },
+    "wiki-internal": {
+      "type": "http",
+      "url": "https://wmcp.acumatica.com/mcp"
+    }
+  }
+}

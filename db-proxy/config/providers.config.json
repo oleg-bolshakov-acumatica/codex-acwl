@@ -1,0 +1,11 @@
+{
+  "sql": {
+    "defaultServer": "bel-sql-009",
+    "aliases": {
+      "default": "bel-sql-009"
+    },
+    "timeoutSec": 30,
+    "maxRows": 200,
+    "maxCharLength": 4000
+  }
+}

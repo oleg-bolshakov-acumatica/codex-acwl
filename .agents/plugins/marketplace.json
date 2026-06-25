@@ -1,0 +1,20 @@
+{
+    "name":  "codex-acwl",
+    "interface":  {
+                      "displayName":  "Acumatica Project Plugins (Light)"
+                  },
+    "plugins":  [
+                    {
+                        "name":  "acumatica-mcp-facade",
+                        "source":  {
+                                       "source":  "local",
+                                       "path":  "./plugins/acumatica-mcp-facade"
+                                   },
+                        "policy":  {
+                                       "installation":  "INSTALLED_BY_DEFAULT",
+                                       "authentication":  "ON_USE"
+                                   },
+                        "category":  "Engineering"
+                    }
+                ]
+}
