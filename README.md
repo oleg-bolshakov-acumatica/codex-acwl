@@ -56,6 +56,60 @@ The two remote HTTP services require the Acumatica corporate network and any
 OAuth flow they request on first use. The SQL facade can list its tools even when
 `db-proxy` is down, but `sql.select` calls require the backend.
 
+## MCP Authorization Troubleshooting
+
+Run the project MCP registration before troubleshooting authentication. The
+normal launcher does this automatically, but on a fresh machine you can run it
+directly:
+
+```powershell
+scripts/Ensure-CodexMcp.ps1 -ProjectRoot . -Apply -Yes
+```
+
+Use explicit MCP login when Jira or Wiki tool calls fail with an authentication
+or authorization error, when the first-use OAuth prompt was missed or expired,
+or when `/mcp` shows `jira-internal` or `wiki-internal` but the service cannot
+be used.
+
+```powershell
+codex mcp login jira-internal
+codex mcp login wiki-internal
+```
+
+Complete the browser OAuth flow with the Acumatica account that has the needed
+Jira and Confluence permissions. The commands must be run from a machine on the
+Acumatica corporate network with private access enabled.
+
+After logging in, restart Codex through the workspace launcher and check `/mcp`:
+
+```powershell
+scripts/Start-Codex.ps1
+```
+
+## MCP Availability Checks
+
+If `/mcp` does not list all three expected servers, treat that as registration
+or service availability first, not as a reason to bypass the approved MCP paths.
+
+```powershell
+scripts/Check-Mcp.ps1
+scripts/Check-Mcp.ps1 -SkipSmokeTest
+```
+
+Use these checks to separate the failure mode:
+
+- If `jira-internal` or `wiki-internal` is missing, rerun the registration
+  preflight and restart Codex.
+- If `jira-internal` or `wiki-internal` is present but returns an OAuth,
+  unauthorized, or forbidden error, run the matching `codex mcp login` command.
+- If only `powershell-mcp-facade` or `sql.select` fails, check script execution
+  policy and the local `db-proxy` backend. The SQL facade does not use
+  `codex mcp login`.
+
+Do not use Jira personal access tokens, direct Jira or Confluence REST calls, or
+browser scraping as a workaround for MCP authorization problems in this
+workspace.
+
 ## Clean Machine Prerequisites and Risks
 
 - Run setup from Windows PowerShell where local `.ps1` scripts are allowed by
