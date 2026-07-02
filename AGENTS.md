@@ -1,6 +1,6 @@
 # Acumatica Application Engineer Workspace (Light)
 
-This is a Codex workspace tailored for Acumatica ERP application engineering on the Projects/Construction team. It is the **light** variant: external context comes from the corporate `jira-internal` and `wiki-internal` MCP servers, optional `acumatica-knowledge`, read-only SQL through a local PowerShell facade, and git over a local product checkout. It provides workflow skills for support analysis, code review, spec verification, bugfixing, and feature development.
+This is a Codex workspace tailored for Acumatica ERP application engineering on the Projects/Construction team. It is the **light** variant: external context comes from the corporate `jira-internal` and `wiki-internal` MCP servers, read-only SQL through a local PowerShell facade, and git over a local product checkout. It provides workflow skills for support analysis, code review, spec verification, bugfixing, and feature development.
 
 ## Repository-Local MCP
 
@@ -16,12 +16,11 @@ Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local 
 - `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira/Wiki/Bitbucket tools.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
-- `acumatica-knowledge` - Acumatica DAC/OData/REST/Generic Inquiry/Help Wiki reference lookup (remote streamable HTTP).
 
 If `/mcp` does not show all expected servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths:
 
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
-- `jira-internal`, `wiki-internal`, and `acumatica-knowledge` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
+- `jira-internal` and `wiki-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
 
 Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the registered plugin servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
 
@@ -36,9 +35,6 @@ Use only the designated repository skills for external context:
 - `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal`, including footer and inline comments.
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
 - `database-access` for read-only SQL evidence through the `powershell-mcp-facade` `sql.select` tool.
-- `acumatica-knowledge-access` for DAC, OData, Contract-Based REST API, Generic Inquiry, and Help Wiki reference lookup through `acumatica-knowledge`.
-
-`acumatica-knowledge` is an optional reference enrichment source. Use it when exact DAC/API/GI/OData/Help Wiki facts can improve diagnosis, review, implementation planning, or validation. If it is unavailable, continue with Jira, Wiki, local git changes, local docs, source code, and read-only SQL as applicable; do not treat its absence as a blocker unless the user explicitly asked for that source and no substitute can answer the question.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.
 Do not request approval for read-only SQL needed for diagnosis.
@@ -90,9 +86,7 @@ Mention missing relevant docs in the final result and continue with available so
 ## Shared Evidence and Safety Rules
 
 - Never invent facts, business requirements, or code behavior.
-- Separate facts from hypotheses. Fact means confirmed by Jira, Wiki, docs, code, tests, Acumatica Knowledge lookup, local git change set, or read-only SQL.
-- Treat Acumatica Knowledge as supporting context unless current Jira, SQL, code, change-set, or runtime evidence confirms applicability.
-- Treat Acumatica Knowledge search results as discovery. Open the exact DAC/entity/schema/page/example before relying on details, and state the limitation when a conclusion is based on reference knowledge rather than the current branch, tenant data, change set, or Jira evidence.
+- Separate facts from hypotheses. Fact means confirmed by Jira, Wiki, docs, code, tests, local git change set, or read-only SQL.
 - Use root-cause confidence when useful: **Confirmed**, **Likely**, or **Unclear**.
 - Do not call a root cause confirmed without direct supporting evidence.
 - Never contradict local docs silently; call out docs/code/data discrepancies.
@@ -125,8 +119,6 @@ This principle governs the secondary mechanics of git, build, and write executio
 - Run `jira-similar-search` only when explicit context is insufficient and likely similar Bugs or Support Requests can change the diagnosis or conclusion.
 - Retrieve relevant Wiki links through `wiki-access`; treat footer comments, inline comments, and comment resolution state as first-class context.
 - Use `database-access` only for read-only diagnosis or verification. Use `SELECT` only. Use `COMPANYID` for tenant-partitioned tables when identified. Do not treat cross-tenant matches as confirmation.
-- Use `acumatica-knowledge-access` for reference discovery when exact DAC/API/GI/OData/doc facts can change the diagnosis, review, implementation plan, or validation.
-- If `acumatica-knowledge` is unavailable, continue without it and mention the limitation only when the missing reference context could materially affect confidence.
 - Use `system-diagnostics-analysis` only when environment, product version, branch choice, customizations, upgrade history, or schema discovery can change the conclusion, implementation plan, or validation.
 - When changed files include `WebSites/Pure/DB/MSSQL/*.sql`, use `migration-script-consistency-review`. The `MSSQL` directory name is historical; determine database applicability from script tags. Treat `ALTER`, `CREATE`, and `DROP` in migration scripts as suspicious.
 
@@ -154,8 +146,7 @@ Before finalizing:
 
 - correct high-level mode skill selected;
 - Jira/branch/range/repository/spec context resolved or limitation stated;
-- required low-level skills used for Jira, Wiki, local change set, SQL, Acumatica Knowledge, migration scripts, and similarity search when those sources are used;
-- Acumatica Knowledge unavailability did not block the workflow, or a material limitation was stated;
+- required low-level skills used for Jira, Wiki, local change set, SQL, migration scripts, and similarity search when those sources are used;
 - explicit links considered before similarity search;
 - changed migration scripts reviewed with `migration-script-consistency-review`, or absence stated when relevant to review/verification;
 - facts and hypotheses separated;

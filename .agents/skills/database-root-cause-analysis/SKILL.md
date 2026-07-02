@@ -9,7 +9,7 @@ description: Use this skill for high-level read-only database analysis of Acumat
 
 Use this skill to turn support-case facts and hypotheses into safe, targeted SQL evidence.
 
-This is a high-level diagnostic workflow. It uses the lower-level `database-access` skill for actual read-only SQL retrieval and relies on `docs/DATABASE_MODEL.md` when Projects/Construction table relationships or join patterns matter. Use `acumatica-knowledge-access` as optional reference enrichment when indexed DAC fields, relationships, or Help Wiki behavior can improve a tenant-scoped SQL plan.
+This is a high-level diagnostic workflow. It uses the lower-level `database-access` skill for actual read-only SQL retrieval and relies on `docs/DATABASE_MODEL.md`, local source, and linked Wiki pages when Projects/Construction table relationships, join patterns, or documented behavior matter.
 
 ## Trigger Point
 
@@ -31,7 +31,6 @@ Skip or keep it minimal when:
 Use `database-access` for all SQL reads.
 Do not use direct SQL clients, provider modules, ad hoc scripts, or direct database connections when the MCP facade path is available.
 Do not request approval for read-only SQL needed for diagnosis.
-Use `acumatica-knowledge-access` only for read-only reference discovery. If `acumatica-knowledge` is unavailable, continue SQL diagnosis with local docs, metadata queries, Jira, code, and other evidence; mention the limitation only when the missing reference context could materially affect the query plan or interpretation.
 
 Allowed SQL:
 
@@ -131,7 +130,7 @@ Start from hypotheses, not from broad table browsing.
 1. Name the current hypothesis and the fact that would confirm or refute it.
 2. Identify primary documents, entities, or setup records from Jira/comments/related items.
 3. Use `docs/DATABASE_MODEL.md` for Projects/Construction table relationships, join keys, and process flows when useful.
-4. Use `acumatica-knowledge-access` as an optional schema preflight when exact DAC fields, keys, relationships, or documented behavior can reduce guesswork. Open exact DAC/page results before relying on them; do not block if unavailable.
+4. Use local source, metadata queries, local docs, and linked Wiki pages as schema preflight when exact DAC fields, keys, relationships, or documented behavior can reduce guesswork.
 5. Query the smallest reliable record set first.
 6. Trace related records outward only when each step changes the conclusion.
 7. Compare expected vs actual persisted values.

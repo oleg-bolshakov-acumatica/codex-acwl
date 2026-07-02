@@ -19,10 +19,8 @@ Use repository-approved paths only:
 - Use `database-access` for read-only SQL evidence when customer data, backup data, tenant state, or version context can confirm or refute a hypothesis.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect diagnosis, branch choice, or validation.
 - Use `local-change-access` when a related change set exists and its diff matters, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
-- Use `acumatica-knowledge-access` as optional reference discovery for DAC fields/relationships, OData, Contract-Based REST API, Generic Inquiry examples, and Help Wiki behavior when those facts can change diagnosis, fix scope, or validation.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
-If `acumatica-knowledge` is unavailable, continue the bugfix workflow and mention the limitation only when the missing reference context could materially affect root-cause confidence, fix safety, or validation.
 
 ## Required Local Context
 
@@ -56,13 +54,12 @@ When version-specific behavior matters:
 1. Read the bug report, Jira context, relevant chronological comments, explicit linked issues, and similar issues only when needed.
 2. Resolve repository, branch/PR, baseline, and version context when relevant.
 3. Retrieve relevant Wiki links and read required local docs.
-4. Use `acumatica-knowledge-access` only when exact DAC/API/GI/OData/Help Wiki reference facts can refine the diagnosis, data joins, affected surfaces, or validation. Open exact objects/pages after search before relying on them; do not block if unavailable.
-5. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
-6. Diagnose root cause from Jira, Wiki, docs, Acumatica Knowledge reference facts, code, tests, and optional SQL evidence.
-7. Confirm the fix remains small, clear, and safely validatable.
-8. Implement the minimal change.
-9. Run focused validation.
-10. Report root cause, fix, validation, and limitations.
+4. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
+5. Diagnose root cause from Jira, Wiki, docs, code, tests, and optional SQL evidence.
+6. Confirm the fix remains small, clear, and safely validatable.
+7. Implement the minimal change.
+8. Run focused validation.
+9. Report root cause, fix, validation, and limitations.
 
 For customer-backup or data-dependent bugs, capture database/server/backup/tenant/`COMPANYID` when present. Use tenant-scoped SQL for tenant-partitioned tables and do not treat cross-tenant matches as confirmation.
 

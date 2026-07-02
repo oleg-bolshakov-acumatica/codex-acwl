@@ -22,15 +22,14 @@ Use [FEATURE_IMPLEMENTATION_PATTERNS.md](FEATURE_IMPLEMENTATION_PATTERNS.md) as 
 
 ## Context Source Selection
 
-The functional specification remains the primary source of business requirements. Local documentation and reference lookups provide implementation context; they should not silently override the specification.
+The functional specification remains the primary source of business requirements. Local documentation and local source lookups provide implementation context; they should not silently override the specification.
 
 - Always use `docs/ARCHITECTURE_RULES.md` and `docs/REFACTORINGS.md` as the implementation guardrails for feature work.
 - Use `docs/BUSINESS_MODEL.md` when PM/CN/PJ domain meaning, process semantics, terminology, or expected product behavior can change interpretation of the requirement.
 - Use `docs/DATABASE_MODEL.md` when table ownership, keys, relationships, projections, or physical join paths can change design or validation.
 - Use `system-diagnostics-analysis` when version, branch choice, customization state, upgrade history, or schema discovery can change the implementation or validation plan.
-- Use Acumatica Knowledge as optional reference discovery for exact DAC fields and relationships, OData, Contract-Based REST API, Generic Inquiry, and Help Wiki facts when those facts can change data-path tracing, design, exposed-surface risk, or validation.
+- Use local source, endpoint definitions, Generic Inquiry definitions, reports, and linked Wiki documentation when exact DAC fields, relationships, OData, Contract-Based REST API, Generic Inquiry, or Help Wiki facts can change data-path tracing, design, exposed-surface risk, or validation.
 
-If Acumatica Knowledge is unavailable, continue feature work. Mention the limitation only when the missing reference fact could materially affect scope, design, or validation confidence.
 
 ## Required Working Artifacts
 

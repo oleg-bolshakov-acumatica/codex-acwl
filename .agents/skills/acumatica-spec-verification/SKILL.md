@@ -18,10 +18,8 @@ Use repository-approved paths only:
 - Use `local-change-access` for implementation evidence in a specific change set, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
 - Use `database-access` only when read-only SQL evidence can change requirement interpretation or verification risk.
-- Use `acumatica-knowledge-access` as optional reference discovery for DAC fields/relationships, OData, Contract-Based REST API, Generic Inquiry examples, and Help Wiki behavior when those facts can change requirement interpretation, coverage, or verification risk.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
-If `acumatica-knowledge` is unavailable, continue verification and mention the limitation only when the missing reference context could materially affect confidence.
 
 ## Specification Source
 
@@ -56,12 +54,11 @@ Keep functional requirement coverage separate from architecture/docs compliance 
 3. Extract normative requirements, scenarios, constraints, UI/data/process rules, edge cases, and acceptance criteria. Distinguish requirements from examples, discussion, obsolete comments, and resolved comments.
 4. Resolve change set/branch and baseline. Treat git diff hunks (over the resolved branch/ref range in `code/`) as primary implementation evidence; use local files only when hunks are insufficient.
 5. Check whether migration scripts changed. If yes, use `migration-script-consistency-review`; if no, record that no migration scripts were changed.
-6. Use `acumatica-knowledge-access` only when exact DAC/API/GI/OData/Help Wiki reference facts can improve coverage or risk assessment. Open exact objects/pages after search before relying on them; do not block if unavailable.
-7. Read required local docs and optional docs only when useful.
-8. Build a requirement-by-requirement coverage matrix.
-9. For implemented requirements, verify correctness, not just presence of code. Check edge cases, data flow, persistence, UI behavior, permissions/workflow impact, migration-script upgrade safety, tests, API/GI/inquiry/report surfaces, and regression risk to the degree supported by evidence.
-10. For a full feature spec, use parallel verification tracks when they improve coverage; otherwise verify sequentially.
-11. Produce findings for missing, partial, incorrect, ambiguous, or risky implementation.
+6. Read required local docs and optional docs only when useful.
+7. Build a requirement-by-requirement coverage matrix.
+8. For implemented requirements, verify correctness, not just presence of code. Check edge cases, data flow, persistence, UI behavior, permissions/workflow impact, migration-script upgrade safety, tests, API/GI/inquiry/report surfaces, and regression risk to the degree supported by evidence.
+9. For a full feature spec, use parallel verification tracks when they improve coverage; otherwise verify sequentially.
+10. Produce findings for missing, partial, incorrect, ambiguous, or risky implementation.
 
 ## Parallel Verification Tracks
 
@@ -107,5 +104,5 @@ Write the final verification report in English using this structure:
 2. **Specification Coverage** - requirement, status, code evidence, and notes/risk.
 3. **Correctness Findings** - highest severity first, using S0-S3 when a gap or defect is found.
 4. **Architecture and Maintainability Notes** - only issues tied to `ARCHITECTURE_RULES.md`, `REFACTORINGS.md`, or implementation risk.
-5. **Verification Limitations** - missing/ambiguous spec, unresolved Wiki comments, truncated Jira/Wiki/PR content, inability to map requirement to code, missing tests, baseline uncertainty, or unavailable material Acumatica Knowledge reference context.
+5. **Verification Limitations** - missing/ambiguous spec, unresolved Wiki comments, truncated Jira/Wiki/PR content, inability to map requirement to code, missing tests, or baseline uncertainty.
 6. **Final Verdict** - one of: **Meets specification**, **Mostly meets specification with gaps**, **Does not meet specification**, **Cannot verify fully**.

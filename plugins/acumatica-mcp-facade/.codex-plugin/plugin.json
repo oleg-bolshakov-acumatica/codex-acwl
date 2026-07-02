@@ -1,7 +1,7 @@
 {
   "name": "acumatica-mcp-facade",
   "version": "0.1.0",
-  "description": "Project-local MCP servers for read-only Acumatica Jira, Wiki, SQL, and knowledge context in a light workspace.",
+  "description": "Project-local MCP servers for read-only Acumatica Jira, Wiki, and SQL context in a light workspace.",
   "author": {
     "name": "Acumatica"
   },
@@ -17,7 +17,7 @@
   "interface": {
     "displayName": "Acumatica MCP Facade",
     "shortDescription": "Read-only Acumatica engineering context (light)",
-    "longDescription": "Registers the repository-local SQL-only PowerShell MCP facade, Acumatica Knowledge proxy, and internal Jira/Wiki HTTP MCP servers for approved Acumatica application-engineering workflows.",
+    "longDescription": "Registers the repository-local SQL-only PowerShell MCP facade and internal Jira/Wiki HTTP MCP servers for approved Acumatica application-engineering workflows.",
     "developerName": "Acumatica",
     "category": "Engineering",
     "capabilities": [

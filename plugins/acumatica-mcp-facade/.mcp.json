@@ -11,19 +11,6 @@
                                                               ],
                                                      "cwd":  "${PROJECT_DIR}"
                                                  },
-                       "acumatica-knowledge":  {
-                                                   "command":  "powershell",
-                                                   "args":  [
-                                                                "-NoProfile",
-                                                                "-ExecutionPolicy",
-                                                                "Bypass",
-                                                                "-File",
-                                                                "${PROJECT_DIR}\\scripts\\Start-StreamableHttpMcpProxy.ps1",
-                                                                "-Url",
-                                                                "https://mcp-knowledge.acutools.net/mcp"
-                                                            ],
-                                                   "cwd":  "${PROJECT_DIR}"
-                                               },
                        "jira-internal":  {
                                              "type":  "http",
                                              "url":  "https://jmcp.acumatica.com/mcp"

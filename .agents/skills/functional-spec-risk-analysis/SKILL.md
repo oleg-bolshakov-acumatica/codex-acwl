@@ -20,18 +20,16 @@ Use repository-approved context paths:
 - Pick the source-specific path directly: `jira-access` for Jira, `wiki-access` for Wiki, and `local-change-access` for a change set.
 - Read `docs/ARCHITECTURE_RULES.md` and `docs/REFACTORINGS.md`.
 - Read `docs/BUSINESS_MODEL.md`, `docs/DATABASE_MODEL.md`, `docs/FEATURE_IMPLEMENTATION_PATTERNS.md`, or source code only when they can change the implementability conclusion.
-- Use `acumatica-knowledge-access` as optional reference discovery for DAC fields/relationships, OData, Contract-Based REST API, Generic Inquiry examples, and Help Wiki behavior when those facts can change consistency or implementability risk.
 - Use read-only SQL only when concrete data evidence is necessary; do not use SQL for speculative design.
 
 Do not use direct REST, browser scraping, ad hoc provider scripts, or write operations for Jira/Wiki/DB context.
-If `acumatica-knowledge` is unavailable, continue the risk analysis and mention the limitation only when the missing reference context could materially affect the verdict.
 
 ## Workflow
 
 1. Identify the spec source, Jira issue, product version, status, update date, and whether the page is draft/approved.
 2. Extract normative requirements from examples, discussion, UI mockups, and comments. Treat unresolved comments as first-class ambiguity.
 3. Restate the task in business terms: what user-visible behavior changes, what source-of-truth data is involved, and what is explicitly out of scope.
-4. Use `acumatica-knowledge-access` only when exact DAC/API/GI/OData/Help Wiki reference facts can test whether the proposed model or behavior conflicts with existing Acumatica structures or documented behavior. Open exact objects/pages after search before relying on them; do not block if unavailable.
+4. Use local source, endpoint definitions, Generic Inquiry definitions, reports, and linked Wiki documentation when exact DAC/API/GI/OData/Help Wiki facts can test whether the proposed model or behavior conflicts with existing Acumatica structures or documented behavior.
 5. Check internal consistency:
    - undefined states or terms, such as "approved", "released", "current", "historical", or "reliable";
    - conflicting inclusion/exclusion rules;
@@ -46,7 +44,7 @@ If `acumatica-knowledge` is unavailable, continue the risk analysis and mention 
    - preserve graph extensibility with virtual methods or graph extensions where customization may be needed;
    - check normal processing and recalculation/rebuild parity;
    - check API, import, correction, reversal, delete, and long-operation paths when the spec creates derived values or relationships.
-7. Separate facts from hypotheses. Do not call a concern confirmed unless it is supported by the spec, comments, docs, Acumatica Knowledge reference facts, code, or read-only data.
+7. Separate facts from hypotheses. Do not call a concern confirmed unless it is supported by the spec, comments, docs, code, or read-only data.
 8. Produce concrete clarification questions or spec wording changes when a concern can be resolved by tightening the spec.
 
 ## Risk Heuristics

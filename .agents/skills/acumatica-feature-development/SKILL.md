@@ -19,10 +19,8 @@ Use repository-approved paths only:
 - Use `database-access` only for read-only diagnostics that can change interpretation, implementation risk, branch choice, or validation.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect implementation or validation.
 - Use `jira-similar-search` only when explicit context is insufficient and prior issues can change the plan.
-- Use `acumatica-knowledge-access` as optional reference discovery for DAC fields/relationships, OData, Contract-Based REST API, Generic Inquiry examples, and Help Wiki behavior when those facts can change interpretation, design, data-path coverage, or validation.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
-If `acumatica-knowledge` is unavailable, continue feature work and mention the limitation only when the missing reference context could materially affect design, scope, or validation.
 
 ## Required Local Context
 
@@ -40,7 +38,7 @@ If a required workflow doc is missing, continue with this skill and report the l
 
 ## Specification Source
 
-The functional specification is the primary source of requirements. When Jira links to a Wiki functional specification, retrieve the Wiki page and treat it as authoritative. Jira context, PRs, comments, related issues, local docs, Acumatica Knowledge reference facts, existing code, tests, and read-only diagnostics are supporting evidence.
+The functional specification is the primary source of requirements. When Jira links to a Wiki functional specification, retrieve the Wiki page and treat it as authoritative. Jira context, PRs, comments, related issues, local docs, existing code, tests, and read-only diagnostics are supporting evidence.
 
 Do not implement ambiguous, contradictory, obsolete, or explicitly deferred requirements without user confirmation.
 
@@ -62,12 +60,11 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 
 1. Refresh Jira, Wiki specification, comments, local docs, branch/PR context, and existing session notes when needed.
 2. Inventory and classify requirements as ready, ambiguous, contradictory, deferred, or rejected for the current phase.
-3. Use `acumatica-knowledge-access` only when exact DAC/API/GI/OData/Help Wiki reference facts can improve data-path tracing, design, or validation. Open exact objects/pages after search before relying on them; do not block if unavailable.
-4. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
-5. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
-6. Implement the minimal slice using existing Acumatica patterns.
-7. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope.
-8. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
+3. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
+4. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
+5. Implement the minimal slice using existing Acumatica patterns.
+6. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope.
+7. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
 
 ## Implementation Rules
 

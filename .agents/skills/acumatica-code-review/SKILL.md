@@ -20,10 +20,8 @@ Use repository-approved paths only:
 - Use `database-access` only for read-only SQL evidence that can change the conclusion.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect review confidence.
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
-- Use `acumatica-knowledge-access` as optional reference discovery for DAC fields/relationships, OData, Contract-Based REST API, Generic Inquiry examples, and Help Wiki behavior when those facts can change review coverage, risk, or validation.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
-If `acumatica-knowledge` is unavailable, continue the review and mention the limitation only when the missing reference context could materially affect confidence.
 
 ## Required Local Context
 
@@ -86,7 +84,7 @@ Recommended parallel tracks:
 - **Architecture Track**: verify compliance with `ARCHITECTURE_RULES.md`, `REFACTORINGS.md`, Acumatica extension patterns, persistence boundaries, and customization-sensitive placement.
 - **Migration/Schema Track**: when migration or schema files changed, verify upgrade safety, tenant/data consistency, DAC/schema alignment, and DB-specific script consistency.
 - **Test/Regression Track**: inspect test coverage, validation evidence, likely regression paths, and missing manual scenarios.
-- **Domain/Data Track**: when domain docs, Acumatica Knowledge reference facts, source-of-truth tables, or read-only SQL can change the conclusion, verify data relationships, API/GI/report surfaces, and version/tenant assumptions.
+- **Domain/Data Track**: when domain docs, local source definitions, source-of-truth tables, or read-only SQL can change the conclusion, verify data relationships, API/GI/report surfaces, and version/tenant assumptions.
 
 Do not parallelize unresolved prerequisites, branch/baseline selection, spec discovery, or final severity synthesis. The final pass must merge all tracks, remove duplicates, resolve contradictions, separate facts from hypotheses, and order findings by severity.
 
@@ -109,18 +107,17 @@ Do not require cleanup of unchanged legacy diagnostics unless the PR touches the
 3. Resolve change set/branch and baseline.
 4. Retrieve relevant Wiki links through `wiki-access`.
 5. Read required local docs and any optional docs that can change the conclusion.
-6. Use `acumatica-knowledge-access` only when exact DAC/API/GI/OData/Help Wiki reference facts can improve the review. Open exact objects/pages after search before relying on them; do not block if unavailable.
-7. Classify the review as Small Bugfix/Change, Spec-Backed Feature, Architecture-First, Migration/Schema-Heavy, or a deliberate combination.
-8. Check whether migration or schema files changed. If `WebSites/Pure/DB/MSSQL/*.sql` changed, use `migration-script-consistency-review`; if `DatabaseModel/Application/**/*.sql` changed, manually verify DAC/schema consistency and upgrade risk against the local docs. If no migration or schema files changed, record that.
-9. When a Jira/Wiki spec is available or the user asks for requirement verification, perform a two-stage review:
+6. Classify the review as Small Bugfix/Change, Spec-Backed Feature, Architecture-First, Migration/Schema-Heavy, or a deliberate combination.
+7. Check whether migration or schema files changed. If `WebSites/Pure/DB/MSSQL/*.sql` changed, use `migration-script-consistency-review`; if `DatabaseModel/Application/**/*.sql` changed, manually verify DAC/schema consistency and upgrade risk against the local docs. If no migration or schema files changed, record that.
+8. When a Jira/Wiki spec is available or the user asks for requirement verification, perform a two-stage review:
    - Stage 1: verify implementation against Jira/Wiki functional requirements.
    - Stage 2: verify implementation against architecture/docs constraints.
    Keep requirement gaps separate from architecture/style issues.
-10. For spec-backed feature PRs, build a lightweight requirement coverage map before declaring coverage complete. For small bugfix/change PRs, focus on root cause, minimality, targeted edge cases, and validation.
-11. Use parallel review tracks when applicable and safe; otherwise perform the tracks sequentially.
-12. Perform a targeted Acuminator diagnostic pass over changed Acumatica C# code, opening only exact `docs/acuminator/PX####.md` files when a matching pattern or suppression needs precise interpretation.
-13. Inspect functional correctness, architecture, refactoring/design quality, domain/database correctness, upgrade safety, reliability, performance, tests, and maintainability.
-14. Synthesize all tracks into findings ordered by severity.
+9. For spec-backed feature PRs, build a lightweight requirement coverage map before declaring coverage complete. For small bugfix/change PRs, focus on root cause, minimality, targeted edge cases, and validation.
+10. Use parallel review tracks when applicable and safe; otherwise perform the tracks sequentially.
+11. Perform a targeted Acuminator diagnostic pass over changed Acumatica C# code, opening only exact `docs/acuminator/PX####.md` files when a matching pattern or suppression needs precise interpretation.
+12. Inspect functional correctness, architecture, refactoring/design quality, domain/database correctness, upgrade safety, reliability, performance, tests, and maintainability.
+13. Synthesize all tracks into findings ordered by severity.
 
 ## Session Notes
 
@@ -186,6 +183,6 @@ Write the final review using this structure:
    - For architecture findings, cite the local doc rule and the decisive implementation line.
 3. **Review Classification and Coverage** - state the classification. For spec-backed feature PRs, summarize requirement coverage and important missing/partial/unclear areas. For small bugfix/change PRs, summarize root-cause confidence, scope minimality, and validation coverage.
 4. **Two-Stage Coverage** - when Stage 1/Stage 2 review was used, summarize spec compliance separately from architecture/docs compliance. If one stage is limited, say why.
-5. **Review Limitations** - missing requirements/docs, branch/version mismatch, skipped checks that affect confidence, unclear baseline/domain behavior, unavailable material Acumatica Knowledge reference context, or review tracks that could not be completed.
+5. **Review Limitations** - missing requirements/docs, branch/version mismatch, skipped checks that affect confidence, unclear baseline/domain behavior, or review tracks that could not be completed.
 6. **Positive Notes** - only if useful.
 7. **Final Verdict** - one of: **Needs changes**, **Looks good with minor improvements**, **Looks good**. If there are no findings, say that explicitly.

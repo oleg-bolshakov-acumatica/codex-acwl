@@ -8,7 +8,6 @@
       "mcpTemplate": "./plugins/acumatica-mcp-facade/.mcp.template.json",
       "mcpOutput": "./plugins/acumatica-mcp-facade/.mcp.json",
       "expectedServers": [
-        "acumatica-knowledge",
         "jira-internal",
         "powershell-mcp-facade",
         "wiki-internal"

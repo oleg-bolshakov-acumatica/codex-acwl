@@ -174,7 +174,7 @@ foreach ($plugin in @($spec.plugins)) {
         }
 
         if ($name -ne "powershell-mcp-facade") {
-            Write-Host ("[proxy] {0,-22} -> {1} (remote proxy; smoke test skipped)" -f $name, $server.command)
+            Write-Host ("[stdio] {0,-22} -> {1} (smoke test skipped)" -f $name, $server.command)
             continue
         }
 

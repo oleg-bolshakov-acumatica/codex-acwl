@@ -11,7 +11,7 @@ Use this skill to perform static source-code analysis for an Acumatica Support R
 
 The goal is to identify likely product code paths, safeguards, state transitions, missing checks, version-specific behavior, and plausible reproduction sequences. Code analysis can strongly support a hypothesis, but it does not prove the current customer's data state unless paired with Jira, SQL, Wiki, PR, or other direct evidence.
 
-Use `acumatica-knowledge-access` as optional reference enrichment when indexed DAC fields, relationships, API/GI surfaces, or Help Wiki behavior can help identify likely source entry points or affected paths. If `acumatica-knowledge` is unavailable, continue source analysis with Jira, local docs, code search, SQL evidence, and related items; mention the limitation only when the missing reference context could materially affect confidence.
+Use Jira, local docs, code search, SQL evidence, related items, linked Wiki pages, endpoint definitions, Generic Inquiry definitions, and reports to identify likely source entry points or affected paths.
 
 ## Trigger Point
 
@@ -141,7 +141,7 @@ Start from the strongest clues already collected:
 - setup values and flags: billable, released, reversed, hold, non-project, account group, cost code, project task;
 - customization names only as context unless custom source is available.
 
-When those clues are incomplete, optionally use `acumatica-knowledge-access` to discover exact DACs, fields, related DACs, API/GI entities, and Help Wiki behavior before searching source. Open exact objects/pages after search before relying on them; do not block if unavailable.
+When those clues are incomplete, search local source, local definitions, linked Wiki pages, endpoint definitions, Generic Inquiry definitions, and reports to discover exact DACs, fields, related DACs, API/GI entities, and Help Wiki behavior before deeper source inspection.
 
 Use `rg` first:
 

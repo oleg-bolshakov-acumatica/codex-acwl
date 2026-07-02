@@ -13,7 +13,7 @@ This skill covers version/build interpretation, source-branch derivation, custom
 
 Keep this skill separate from `docs/DATABASE_MODEL.md`. `DATABASE_MODEL.md` describes Projects/Construction application entities, relationships, document flows, and domain-specific tables. This skill describes environment, version, customization, upgrade, source-branch, and schema-discovery checks.
 
-Use `acumatica-knowledge-access` as optional reference enrichment when indexed DAC/schema or Help Wiki facts can reduce ambiguity before database metadata checks. Treat the current backup metadata and version-specific source `DatabaseModel` as higher-confidence evidence for exact system table shape.
+Use local docs, source `DatabaseModel`, and database metadata checks when DAC/schema or Help Wiki facts can reduce ambiguity. Treat the current backup metadata and version-specific source `DatabaseModel` as high-confidence evidence for exact system table shape.
 
 ## Trigger Point
 
@@ -31,7 +31,6 @@ Skip it when diagnostics cannot change the conclusion, such as a fully confirmed
 ## Access And References
 
 Use `database-access` for read-only SQL.
-Use `acumatica-knowledge-access` only for optional read-only reference discovery. If `acumatica-knowledge` is unavailable, continue diagnostics with database metadata, local docs, Jira, and source-code context; mention the limitation only when the missing reference context could materially affect confidence.
 Do not bypass MCP with direct SQL clients or provider modules.
 
 Only use `SELECT` statements. Do not run jobs, procedures, functions, or state-changing SQL.
@@ -178,7 +177,7 @@ Use schema discovery when:
 - a suspected table may be absent in the backup;
 - customization may have added columns/tables.
 
-When the suspected object is a standard DAC, optionally check Acumatica Knowledge first for fields and relationships, then confirm version- or tenant-specific shape with SQL metadata or source code when it matters.
+When the suspected object is a standard DAC, check local source for fields and relationships, then confirm version- or tenant-specific shape with SQL metadata when it matters.
 
 Examples:
 

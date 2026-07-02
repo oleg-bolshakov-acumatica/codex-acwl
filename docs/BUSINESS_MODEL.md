@@ -86,7 +86,7 @@ When an AI agent designs a new feature in this domain, it should reason in the f
 
 Use this document to decide what additional context to request, not to replace that context:
 
-- If the question depends on exact DAC fields, relationships, exposed API/OData/GI shape, or screen-level reference behavior, use Acumatica Knowledge and then verify against local source when branch-specific behavior matters.
+- If the question depends on exact DAC fields, relationships, exposed API/OData/GI shape, or screen-level reference behavior, inspect local source, local definitions, and linked Wiki documentation, then verify against the current branch when branch-specific behavior matters.
 - If the question depends on current requirements, acceptance criteria, or customer-facing intent, use Jira and linked Wiki specifications.
 - If the question depends on tenant data, upgrade history, actual balances, document chains, or environment version, use read-only SQL and system diagnostics.
 - If the question depends on implementation mechanics, lifecycle hooks, workflow, persistence, or tests, use the local source and the architecture/refactoring docs.

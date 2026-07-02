@@ -3732,7 +3732,7 @@ Changes to DAC fields, projections, selectors, actions, statuses, or workflow st
 - Projection or selector shape changes and may feed inquiry/report/API paths
 - Action signature, availability, or server-side behavior changes
 - Status/list value changes affect document lifecycle
-- Acumatica Knowledge, local GI definitions, endpoint definitions, or reports show exposed usage
+- Local GI definitions, endpoint definitions, or reports show exposed usage
 
 **Core Transformation (Target State):**
 - Identify likely exposed surfaces for the changed object when the risk is material

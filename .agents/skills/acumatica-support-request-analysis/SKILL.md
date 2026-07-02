@@ -9,9 +9,9 @@ description: Use this skill when Codex must analyze Acumatica ERP Support Reques
 
 The project-local MCP servers are declared in `.codex-mcp.json` and registered through the Codex project plugin:
 
-- `acumatica-knowledge`, `jira-internal`, `wiki-internal`.
+- `jira-internal`, `wiki-internal`.
 
-`jira-internal` and `wiki-internal` are the Acumatica-hosted HTTP MCP servers with OAuth and read-only scope; they are the primary Jira and Wiki context path for Support Request analysis. `acumatica-knowledge` is available for Acumatica DAC, OData, Contract-Based REST API, Generic Inquiry, and documentation lookup when those facts can improve diagnosis. It is an optional reference enrichment source; if it is unavailable, continue the Support Request analysis with Jira, related items, Wiki, SQL, source code, and local docs as applicable. If `/mcp` does not show all expected servers, treat it as an MCP configuration or backend-availability problem first: run `scripts/Check-Mcp.ps1` and confirm the db-proxy (`127.0.0.1:8765`) backend is running. Do not bypass these servers with REST, provider modules, or ad hoc scripts.
+`jira-internal` and `wiki-internal` are the Acumatica-hosted HTTP MCP servers with OAuth and read-only scope; they are the primary Jira and Wiki context path for Support Request analysis. If `/mcp` does not show all expected servers, treat it as an MCP configuration or backend-availability problem first: run `scripts/Check-Mcp.ps1` and confirm the db-proxy (`127.0.0.1:8765`) backend is running. Do not bypass these servers with REST, provider modules, or ad hoc scripts.
 
 ## Highest-Priority Context Access Rule
 
@@ -21,7 +21,6 @@ Use only the designated repository skills or MCP paths for external context. `ji
 - `jira-similar-search` for likely similar Bugs or Support Requests through `jira-internal` JQL search.
 - `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal` Confluence tools, including page reads, search, comments, labels, attachments, page history, diffs, images, or view statistics.
 - `database-access` for read-only SQL evidence.
-- `acumatica-knowledge-access` for optional Acumatica DAC, OData, Contract-Based REST API, Generic Inquiry, and Help Wiki lookups through the `acumatica-knowledge` MCP server when local docs or source code do not provide the needed reference.
 - `local-change-access` to inspect changes via git over the local `code/` repository when change/PR context is explicitly needed: resolve a branch name or commit/ref range, and map a PR to a branch via Jira Development data.
 - `database-root-cause-analysis` for applied, tenant-scoped SQL diagnosis and backup/environment/version extraction when database evidence can confirm or refute root-cause hypotheses.
 - `system-diagnostics-analysis` for targeted version/build, customization, upgrade chronology, schema, and branch-selection diagnostics.
@@ -44,7 +43,7 @@ Primary goals:
 
 Supporting goals: understand the issue, identify facts and symptoms, validate hypotheses, build a safe read-only database analysis plan when needed, and answer any explicit Jira request such as fix confirmation or data check.
 
-Use this instruction for Support Requests, defect descriptions, case comments, related items, linked Wiki pages, database backup/restore parameters, Acumatica knowledge lookups, and useful docs from `docs`.
+Use this instruction for Support Requests, defect descriptions, case comments, related items, linked Wiki pages, database backup/restore parameters, local source analysis, and useful docs from `docs`.
 
 All stages, searches, SQL checks, docs reads, diagnostics, and code-path checks are means to the current Jira request, workaround, or root-cause goal. Skip low-value steps when they cannot affect the conclusion, and mention skipped normally-useful steps only when the omission affects confidence.
 
@@ -82,8 +81,6 @@ Do not read broad documentation just for formality when Jira, SQL, Wiki, or code
 - Separate facts from hypotheses.
   - Fact = explicitly confirmed by text, data, code, docs, related case, Wiki, or SQL.
   - Hypothesis = likely explanation that still requires validation.
-- Treat Acumatica Knowledge as reference context for schema, API, Generic Inquiry, and Help Wiki behavior. It can strengthen or refine hypotheses, SQL plans, and workaround validation, but current-case conclusions still need Jira, SQL, code, Wiki, PR, runtime, or other case evidence when applicability matters.
-- If Acumatica Knowledge is unavailable, do not block the analysis. Mention it only as a limitation when exact reference context could materially change the root-cause confidence, workaround safety, or validation plan.
 - Use root-cause confidence: **Confirmed**, **Likely**, or **Unclear**.
 - If root cause is unclear, do not pretend it is confirmed; provide hypotheses and validation plan.
 - Stage 9 is a mandatory stop/go gate in every final Support Request analysis report. Always make its result explicit before Jira comment drafting.
@@ -139,7 +136,7 @@ For each useful hypothesis, identify the affected entity, process point, and lik
 
 Mark indirect conclusions as hypotheses, not confirmed root cause.
 
-Use `acumatica-knowledge-access` as an optional reference check when exact DAC fields, relationships, API/GI surfaces, or Help Wiki behavior can refine the hypotheses or SQL/source-code validation plan. Open exact DAC/entity/page/example results before relying on them. If the resource is unavailable, continue without it and state a limitation only when the missing reference can materially affect the next step.
+Use local source, local docs, linked Wiki pages, endpoint definitions, Generic Inquiry definitions, and reports when exact DAC fields, relationships, API/GI surfaces, or Help Wiki behavior can refine the hypotheses or SQL/source-code validation plan.
 
 ### Stage 5. Database Root-Cause Analysis
 
@@ -436,7 +433,6 @@ Before finalizing, verify:
 - SQL validation used only `SELECT` and only where it can confirm/refute a hypothesis or answer Jira;
 - source-code analysis used the `source-code-analysis` skill when Jira/similar/DB evidence did not establish root cause, or was skipped with a clear reason;
 - source-code evidence includes self-contained citations: branch/commit, full file path, exact lines, short code excerpt, finding impact, and limitations;
-- Acumatica Knowledge was used when reference DAC/API/GI/OData/doc facts could materially improve the analysis, or its unavailability was treated as non-blocking with a limitation only when material;
 - root-cause origin item search performed when code/git/Jira/spec evidence suggests the current behavior came from a prior feature, ChangeRequest, migration, workflow, selector/restrictor, report/query, validation, PR, or commit; meaningful origin items are included in `## 6.5. Root-Cause Origin Item` with relationship confidence and evidence;
 - broad or expensive `jira-internal` / `wiki-internal` searches were run only after explicit user approval, unless the user directly requested them; ordinary targeted reads needed no approval;
 - workaround assessed when requested or needed;

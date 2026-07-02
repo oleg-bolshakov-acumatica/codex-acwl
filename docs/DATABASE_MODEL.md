@@ -38,7 +38,7 @@ This is **not** a business-model replacement and not a full ERP database catalog
 | Local SQL definitions under `DatabaseModel/Application/PM` | Physical PM tables used for projects, budgets, transactions, billing, allocation, WIP, quotes, project files, and labor classifications |
 | Local SQL definitions under `DatabaseModel/Application/CN` | Physical CN tables for compliance documents, lien waiver setup, joint payees, and construction references |
 | Local SQL definitions under `DatabaseModel/Application/PJ` | Physical PJ tables for RFIs, project issues, daily field reports, drawings, photo logs, submittals, project contacts, and setup/status records |
-| Acumatica Knowledge reference lookups | Optional cross-check for DAC summaries, field ownership, relationship discovery, and projection-vs-table classification |
+| Local DAC/source definitions | DAC summaries, field ownership, relationship discovery, and projection-vs-table classification |
 | Status/type constant classes | ProjectStatus, ProjectTaskStatus, PMCommitmentType, ChangeOrderStatus, ProformaStatus, PMAccountType, PMBillingOption, PMCompletedPctMethod, BudgetLevels |
 | FK/PK nested classes | Explicit `PK`, `FK`, `PXParent`, `PXForeignReference` declarations |
 | PXProjection attributes | To distinguish physical tables from projections |
@@ -92,7 +92,7 @@ Customer reports issue
 Use this document to choose the physical storage starting point. Use additional sources only when they answer a question this document intentionally leaves compact:
 
 - Use `docs/BUSINESS_MODEL.md` when the issue is about the business meaning of a Project, Quote, Budget, Commitment, Billing, Compliance, PJ document, or Project File.
-- Use Acumatica Knowledge when exact DAC fields, field ownership, projections, API/OData/GI exposure, or related DAC discovery can change the join path.
+- Use local DAC/source definitions when exact DAC fields, field ownership, projections, API/OData/GI exposure, or related DAC discovery can change the join path.
 - Use local source when release logic, workflow, graph processing, calculated fields, or persistence side effects determine how tables are updated.
 - Use read-only SQL when tenant data, document lineage, balances, or environment-specific state must be confirmed.
 
