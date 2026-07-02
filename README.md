@@ -24,15 +24,16 @@ humans setting up and maintaining the workspace.
 ```text
 codex-acwl/
   AGENTS.md                               Always-on operating contract.
-  .codex-mcp.json                        Codex project MCP declaration.
+  .codex/config.toml                      Codex project MCP configuration.
+  .codex-mcp.json                        Legacy MCP plugin bootstrap metadata.
   .agents/
-    plugins/marketplace.json             Project-local Codex plugin marketplace.
+    plugins/marketplace.json             Legacy project-local plugin marketplace.
     skills/                              Workflow and access skills.
-  plugins/acumatica-mcp-facade/          Codex plugin manifest and MCP template.
+  plugins/acumatica-mcp-facade/          Legacy Codex plugin manifest and MCP template.
   core/                                  PowerShell modules for the SQL-only facade.
   config/server.config.json              Facade server and backend configuration.
   db-proxy/                              Local read-only SQL backend.
-  scripts/                               Startup, registration, health-check, and smoke tests.
+  scripts/                               Startup, health-check, and smoke tests.
   docs/                                  Architecture/business/database/reference docs.
   code/                                  Local product checkout placeholder (git-ignored).
 ```
@@ -42,9 +43,14 @@ local Acumatica product checkout when a workflow needs source-code evidence.
 
 ## MCP Servers
 
-Codex receives the MCP servers through the project-local plugin described by
-`.codex-mcp.json`, `.agents/plugins/marketplace.json`, and
-`plugins/acumatica-mcp-facade/.mcp.template.json`.
+Codex receives the fixed MCP server set from `.codex/config.toml` when the
+workspace is trusted. `scripts/Start-Codex.ps1` launches Codex with
+`-C <workspace-root>` so the project config is in scope.
+
+The older project-local plugin bootstrap files (`.codex-mcp.json`,
+`.agents/plugins/marketplace.json`, and `plugins/acumatica-mcp-facade/`) are
+retained as legacy metadata only. Normal startup no longer patches
+`~/.codex/config.toml` or a plugin cache.
 
 | Server | Transport | Purpose |
 | --- | --- | --- |
@@ -58,18 +64,15 @@ OAuth flow they request on first use. The SQL facade can list its tools even whe
 
 ## MCP Authorization Troubleshooting
 
-Run the project MCP registration before troubleshooting authentication. The
-normal launcher does this automatically, but on a fresh machine you can run it
-directly:
-
-```powershell
-scripts/Ensure-CodexMcp.ps1 -ProjectRoot . -Apply -Yes
-```
+First confirm that the project MCP config is loaded. Start Codex through the
+workspace launcher and check `/mcp`, or run `scripts/Check-Mcp.ps1`. On a clean
+machine, Codex must trust the workspace before it loads `.codex/config.toml`.
 
 Use explicit MCP login when Jira or Wiki tool calls fail with an authentication
 or authorization error, when the first-use OAuth prompt was missed or expired,
 or when `/mcp` shows `jira-internal` or `wiki-internal` but the service cannot
-be used.
+be used. Run these commands from the workspace root so Codex can see the
+project-scoped server definitions.
 
 ```powershell
 codex mcp login jira-internal
@@ -88,7 +91,7 @@ scripts/Start-Codex.ps1
 
 ## MCP Availability Checks
 
-If `/mcp` does not list all three expected servers, treat that as registration
+If `/mcp` does not list all three expected servers, treat that as configuration
 or service availability first, not as a reason to bypass the approved MCP paths.
 
 ```powershell
@@ -98,13 +101,16 @@ scripts/Check-Mcp.ps1 -SkipSmokeTest
 
 Use these checks to separate the failure mode:
 
-- If `jira-internal` or `wiki-internal` is missing, rerun the registration
-  preflight and restart Codex.
+- If `jira-internal` or `wiki-internal` is missing, confirm that Codex trusts
+  the workspace and that `.codex/config.toml` contains the expected servers.
 - If `jira-internal` or `wiki-internal` is present but returns an OAuth,
   unauthorized, or forbidden error, run the matching `codex mcp login` command.
 - If only `powershell-mcp-facade` or `sql.select` fails, check script execution
   policy and the local `db-proxy` backend. The SQL facade does not use
   `codex mcp login`.
+- If `http://127.0.0.1:8765/status` responds with a backend other than
+  `db-proxy-0.1.0`, stop the process using that endpoint or change
+  `db-proxy/config/db-proxy.config.json` before starting Codex.
 
 Do not use Jira personal access tokens, direct Jira or Confluence REST calls, or
 browser scraping as a workaround for MCP authorization problems in this
@@ -112,9 +118,11 @@ workspace.
 
 ## Clean Machine Prerequisites and Risks
 
+- Codex must trust the workspace. Project-scoped `.codex/config.toml` is ignored
+  in untrusted projects.
 - Run setup from Windows PowerShell where local `.ps1` scripts are allowed by
-  corporate policy. This workspace does not pass execution-policy override
-  flags in documented commands or generated MCP server definitions.
+  corporate policy. The MCP facade startup uses PowerShell with
+  `-ExecutionPolicy RemoteSigned`.
 - If PowerShell blocks script execution on a clean computer, use the approved
   IT process for trusted local scripts instead of bypassing policy in the
   command line.
@@ -125,7 +133,7 @@ workspace.
 - Jira and Wiki MCP access requires the Acumatica corporate network and the
   OAuth flow requested by Codex on first use.
 - SQL diagnostics require the `SQLPS` module / `Invoke-Sqlcmd` and access to the
-  target SQL Server. MCP registration and Jira/Wiki usage do not require SQLPS.
+  target SQL Server. MCP configuration and Jira/Wiki usage do not require SQLPS.
 - The product source checkout is not included. Place a clone, worktree,
   junction, or symlink under `code/`, or provide another path when source-code
   workflows need it.
@@ -141,9 +149,11 @@ scripts/Start-Codex.ps1
 The launcher:
 
 1. Starts `db-proxy` if `http://127.0.0.1:8765/status` is not responding.
-2. Runs `scripts/Ensure-CodexMcp.ps1 -Apply` to register/update the project
-   Codex plugin and generated MCP config.
-3. Launches `codex -C <workspace-root>`.
+2. Fails fast if that endpoint is already occupied by a backend other than
+   `db-proxy-0.1.0`.
+3. Verifies that `.codex/config.toml` exists.
+4. Launches `codex -C <workspace-root>`, letting Codex load the trusted project
+   MCP configuration.
 
 Useful launcher switches:
 
@@ -164,12 +174,6 @@ Exercise SQL end to end after `db-proxy` is running:
 ```powershell
 scripts/Smoke-Test-Sql.ps1
 scripts/Smoke-Test-Sql.ps1 -Schema MyDb -Query "SELECT TOP 1 * FROM COMPANY"
-```
-
-You can run the registration preflight directly:
-
-```powershell
-scripts/Ensure-CodexMcp.ps1 -ProjectRoot . -Apply -Yes
 ```
 
 ## Product Source Checkout

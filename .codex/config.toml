@@ -1,0 +1,15 @@
+[mcp_servers.powershell-mcp-facade]
+command = "powershell"
+args = ["-NoProfile", "-ExecutionPolicy", "RemoteSigned", "-File", "scripts/Start-McpServer.ps1"]
+cwd = "."
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+enabled_tools = ["sql.select", "server.describe_capabilities"]
+
+[mcp_servers.jira-internal]
+url = "https://jmcp.acumatica.com/mcp"
+tool_timeout_sec = 60
+
+[mcp_servers.wiki-internal]
+url = "https://wmcp.acumatica.com/mcp"
+tool_timeout_sec = 60

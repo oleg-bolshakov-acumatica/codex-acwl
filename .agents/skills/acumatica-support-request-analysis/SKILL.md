@@ -7,7 +7,7 @@ description: Use this skill when Codex must analyze Acumatica ERP Support Reques
 
 ## Repository-Local MCP
 
-The project-local MCP servers are declared in `.codex-mcp.json` and registered through the Codex project plugin:
+The project-local MCP servers are declared in `.codex/config.toml` and loaded by Codex when the workspace is trusted:
 
 - `jira-internal`, `wiki-internal`.
 

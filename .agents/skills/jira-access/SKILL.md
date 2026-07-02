@@ -72,7 +72,7 @@ jira-internal -> https://jmcp.acumatica.com/mcp
 All project MCP servers are declared at the workspace root in:
 
 ```text
-.codex-mcp.json
+.codex/config.toml
 ```
 
 The internal Jira server uses streamable HTTP and requires OAuth on first use. It is only reachable from the Acumatica corporate network with private access enabled.

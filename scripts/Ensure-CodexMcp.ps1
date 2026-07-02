@@ -8,6 +8,9 @@ param(
     [switch]$KeepOtherProjectMarketplaces
 )
 
+# Legacy helper. Normal workspace startup uses .codex/config.toml and does not
+# call this script.
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 

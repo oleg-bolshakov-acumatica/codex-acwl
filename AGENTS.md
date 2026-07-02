@@ -4,14 +4,11 @@ This is a Codex workspace tailored for Acumatica ERP application engineering on 
 
 ## Repository-Local MCP
 
-The project-local MCP servers are supplied by the Codex plugin declared in:
+The project-local MCP servers are declared in the trusted Codex project config:
 
-- `.codex-mcp.json`
-- `.agents/plugins/marketplace.json`
-- `plugins/acumatica-mcp-facade/.codex-plugin/plugin.json`
-- `plugins/acumatica-mcp-facade/.mcp.template.json`
+- `.codex/config.toml`
 
-Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and runs the project MCP registration preflight before launching Codex. The fixed project MCP server set for this workspace is:
+Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed project MCP server set for this workspace is:
 
 - `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira/Wiki/Bitbucket tools.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
@@ -22,7 +19,7 @@ If `/mcp` does not show all expected servers, treat it as an MCP configuration o
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
 - `jira-internal` and `wiki-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
 
-Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the registered plugin servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
+Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the configured project MCP servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
 
 This workspace is read-only by design (the only write-capable work is local source edits in the bugfix/feature modes). Codex approvals and the SQL guardrails are a convenience, not a substitute for the safety rules below.
 

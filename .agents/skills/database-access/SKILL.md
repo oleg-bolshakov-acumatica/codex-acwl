@@ -26,7 +26,7 @@ This skill is for read-only access through the main MCP server only. Do not use 
 Use the MCP tool exposed by the PowerShell MCP facade server.
 For read-only SQL retrieval, call the tool directly when the current Windows identity already has access. Do not ask the user for an extra confirmation step for the `sql.select` tool call itself.
 Treat this tool as read-only and safe for automatic approval after the server is trusted.
-The `powershell-mcp-facade` server is declared in `.codex-mcp.json` at the workspace root and connected by Codex; call its `sql.select` tool directly.
+The `powershell-mcp-facade` server is declared in `.codex/config.toml` at the workspace root and connected by Codex when the workspace is trusted; call its `sql.select` tool directly.
 Do not auto-start `db-proxy` from an analysis workflow unless the user explicitly asks for that action; `scripts/Start-Codex.ps1` owns session startup.
 Do not bypass the facade by importing `db-proxy/providers/Sql.Provider.psm1`, calling `Invoke-SqlSelect` directly, or using ad hoc shell-based SQL access when the MCP server for this repository is available.
 If `resources/list` or `resources/templates/list` returns empty or incomplete data, continue with MCP `tools/list` and `tools/call` instead of switching to provider modules.
@@ -51,7 +51,7 @@ sql.select
 All project MCP servers, including the facade, are declared at the workspace root in:
 
 ```text
-.codex-mcp.json
+.codex/config.toml
 ```
 
 The facade is a `stdio` MCP server (`scripts/Start-McpServer.ps1`, configuration in `config/server.config.json`); its internal facade-to-db-proxy transport uses localhost HTTP, but that is an implementation detail behind the MCP server. Use the facade as the only supported path for SQL reads. Keep commentary short and avoid narrating transport steps unless the user explicitly asks for protocol details.

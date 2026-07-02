@@ -3,76 +3,84 @@ param(
     [switch]$SkipSmokeTest
 )
 
-# Validates the Codex project MCP declaration and smoke-tests the local SQL
-# facade. This does not mutate Codex user config; registration is handled by
-# scripts/Ensure-CodexMcp.ps1 and scripts/Start-Codex.ps1.
+# Validates the Codex project MCP configuration and smoke-tests the local SQL
+# facade. This script does not mutate Codex user config.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$specPath = Join-Path $projectRoot ".codex-mcp.json"
+$configPath = Join-Path $projectRoot ".codex/config.toml"
+$expectedServers = @("jira-internal", "powershell-mcp-facade", "wiki-internal")
+$expectedFacadeTools = @("sql.select", "server.describe_capabilities")
+$expectedDbProxyBackendVersion = "db-proxy-0.1.0"
 
-if (-not (Test-Path -LiteralPath $specPath)) {
-    Write-Error "Missing Codex MCP declaration: .codex-mcp.json was not found at the workspace root."
+if (-not (Test-Path -LiteralPath $configPath)) {
+    Write-Error "Missing Codex project config: .codex/config.toml was not found at the workspace root."
     exit 1
 }
 
-function Resolve-WorkspacePath {
+function Get-TomlStringValue {
     param(
-        [Parameter(Mandatory = $true)][string]$BasePath,
-        [Parameter(Mandatory = $true)][string]$Path
+        [Parameter(Mandatory)] [string]$Block,
+        [Parameter(Mandatory)] [string]$Key
     )
 
-    if ([System.IO.Path]::IsPathRooted($Path)) {
-        return [System.IO.Path]::GetFullPath($Path)
+    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*"([^"]*)"\s*$'
+    if ($Block -match $pattern) {
+        return [string]$Matches[1]
     }
 
-    return [System.IO.Path]::GetFullPath((Join-Path $BasePath $Path))
+    return $null
 }
 
-function Replace-Tokens {
+function Get-TomlStringArrayValue {
     param(
-        [Parameter(Mandatory = $true)]$Value,
-        [Parameter(Mandatory = $true)][hashtable]$Tokens
+        [Parameter(Mandatory)] [string]$Block,
+        [Parameter(Mandatory)] [string]$Key
     )
 
-    if ($null -eq $Value) {
-        return $null
+    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*\[(.*?)\]\s*$'
+    if ($Block -notmatch $pattern) {
+        return @()
     }
 
-    if ($Value -is [string]) {
-        $result = $Value
-        foreach ($key in $Tokens.Keys) {
-            $result = $result.Replace($key, [string]$Tokens[$key])
-        }
-        return $result
+    return @([regex]::Matches($Matches[1], '"([^"]*)"') | ForEach-Object { [string]$_.Groups[1].Value })
+}
+
+function Get-McpServerBlocks {
+    param([Parameter(Mandatory)] [string]$Toml)
+
+    $blocks = @{}
+    $pattern = '(?ms)^\[mcp_servers\.([^\]]+)\]\s*\r?\n(.*?)(?=^\[|\z)'
+    foreach ($match in [regex]::Matches($Toml, $pattern)) {
+        $blocks[[string]$match.Groups[1].Value] = [string]$match.Groups[2].Value
     }
 
-    if ($Value -is [System.Collections.IEnumerable] -and -not ($Value -is [string]) -and -not ($Value -is [pscustomobject])) {
-        $items = @()
-        foreach ($item in $Value) {
-            $items += Replace-Tokens -Value $item -Tokens $Tokens
-        }
-        return $items
+    return $blocks
+}
+
+function Get-DbProxyBaseUrl {
+    param([Parameter(Mandatory)] [string]$ProjectRoot)
+
+    $dbProxyConfigPath = Join-Path $ProjectRoot "db-proxy/config/db-proxy.config.json"
+    if (-not (Test-Path -LiteralPath $dbProxyConfigPath)) {
+        return "http://127.0.0.1:8765"
     }
 
-    if ($Value -is [pscustomobject]) {
-        $hash = [ordered]@{}
-        foreach ($property in $Value.PSObject.Properties) {
-            $hash[$property.Name] = Replace-Tokens -Value $property.Value -Tokens $Tokens
-        }
-        return [pscustomobject]$hash
+    $dbProxyConfig = Get-Content -LiteralPath $dbProxyConfigPath -Raw | ConvertFrom-Json
+    if ($null -ne $dbProxyConfig.http -and -not [string]::IsNullOrWhiteSpace([string]$dbProxyConfig.http.baseUrl)) {
+        return ([string]$dbProxyConfig.http.baseUrl).TrimEnd("/")
     }
 
-    return $Value
+    return "http://127.0.0.1:8765"
 }
 
 function Invoke-StdioSmokeTest {
     param(
-        [Parameter(Mandatory = $true)][string]$Command,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [Parameter(Mandatory = $true)][string]$WorkingDirectory
+        [Parameter(Mandatory)] [string]$Command,
+        [Parameter(Mandatory)] [string[]]$Arguments,
+        [Parameter(Mandatory)] [string]$WorkingDirectory
     )
 
     $request = @(
@@ -93,6 +101,7 @@ function Invoke-StdioSmokeTest {
         if ($line -notmatch '^\s*\{') {
             continue
         }
+
         $message = $line | ConvertFrom-Json
         if ($message.id -eq 2 -and $null -ne $message.result -and $null -ne $message.result.tools) {
             return @(@($message.result.tools) | ForEach-Object { [string]$_.name })
@@ -102,119 +111,127 @@ function Invoke-StdioSmokeTest {
     throw "tools/list did not return a tool catalog."
 }
 
-$dbProxyConfigPath = Join-Path $projectRoot "db-proxy/config/db-proxy.config.json"
-if (Test-Path -LiteralPath $dbProxyConfigPath) {
-    $dbProxyConfig = Get-Content -LiteralPath $dbProxyConfigPath -Raw | ConvertFrom-Json
-    $dbProxyBaseUrl = if ($null -ne $dbProxyConfig.http -and -not [string]::IsNullOrWhiteSpace([string]$dbProxyConfig.http.baseUrl)) {
-        ([string]$dbProxyConfig.http.baseUrl).TrimEnd("/")
-    } else {
-        "http://127.0.0.1:8765"
-    }
-
-    try {
-        $dbStatus = Invoke-RestMethod -Uri ("{0}/status" -f $dbProxyBaseUrl) -Method Get -TimeoutSec 3 -ErrorAction Stop
-        Write-Host ("[db   ] {0,-22} -> /status OK (backendVersion={1})" -f "db-proxy", $dbStatus.result.backendVersion)
-    }
-    catch {
-        Write-Host ("[db   ] {0,-22} -> /status not reachable on {1} (start db-proxy/Start.ps1 or use scripts/Start-Codex.ps1 -ProxyOnly)" -f "db-proxy", $dbProxyBaseUrl)
-    }
-}
-
-$spec = Get-Content -LiteralPath $specPath -Raw | ConvertFrom-Json
-if ($null -eq $spec.plugins -or @($spec.plugins).Count -eq 0) {
-    Write-Error ".codex-mcp.json does not declare any plugins."
-    exit 1
-}
-
-$tokens = @{
-    '${PROJECT_DIR}' = $projectRoot
-    '${PROJECT_ROOT}' = $projectRoot
-    '${PROJECT_FOLDER_NAME}' = Split-Path -Leaf $projectRoot
-}
-
-$expectedFacadeTools = @("sql.select", "server.describe_capabilities")
 $failures = 0
+$toml = Get-Content -LiteralPath $configPath -Raw
+$blocks = Get-McpServerBlocks -Toml $toml
 
-foreach ($plugin in @($spec.plugins)) {
-    $pluginName = [string]$plugin.name
-    $templatePath = Resolve-WorkspacePath -BasePath $projectRoot -Path ([string]$plugin.mcpTemplate)
-    if (-not (Test-Path -LiteralPath $templatePath)) {
-        Write-Host ("[mcp  ] {0,-22} -> FAILED: missing template {1}" -f $pluginName, $templatePath)
-        $failures++
-        continue
+$actualServers = @($blocks.Keys | ForEach-Object { [string]$_ } | Sort-Object -Unique)
+$missingServers = @($expectedServers | Where-Object { $_ -notin $actualServers })
+$unexpectedServers = @($actualServers | Where-Object { $_ -notin $expectedServers })
+
+if ($missingServers.Count -gt 0 -or $unexpectedServers.Count -gt 0) {
+    $failures++
+    Write-Host ("[mcp  ] .codex/config.toml -> FAILED: expected servers [{0}], got [{1}]." -f ($expectedServers -join ", "), ($actualServers -join ", "))
+    if ($missingServers.Count -gt 0) {
+        Write-Host ("         Missing: {0}" -f ($missingServers -join ", "))
+    }
+    if ($unexpectedServers.Count -gt 0) {
+        Write-Host ("         Unexpected: {0}" -f ($unexpectedServers -join ", "))
+    }
+}
+else {
+    Write-Host ("[mcp  ] .codex/config.toml -> OK, servers: {0}." -f ($actualServers -join ", "))
+}
+
+if ($blocks.ContainsKey("powershell-mcp-facade")) {
+    $facadeBlock = [string]$blocks["powershell-mcp-facade"]
+    $facadeErrors = @()
+
+    if ((Get-TomlStringValue -Block $facadeBlock -Key "command") -ne "powershell") {
+        $facadeErrors += "command must be powershell"
     }
 
-    $template = Get-Content -LiteralPath $templatePath -Raw | ConvertFrom-Json
-    $config = Replace-Tokens -Value $template -Tokens $tokens
-    if ($null -eq $config.mcpServers) {
-        Write-Host ("[mcp  ] {0,-22} -> FAILED: template does not declare mcpServers." -f $pluginName)
-        $failures++
-        continue
+    if ((Get-TomlStringValue -Block $facadeBlock -Key "cwd") -ne ".") {
+        $facadeErrors += "cwd must be ."
     }
 
-    $actualServers = @($config.mcpServers.PSObject.Properties | ForEach-Object { [string]$_.Name } | Sort-Object -Unique)
-    $expectedServers = @($plugin.expectedServers | ForEach-Object { [string]$_ } | Sort-Object -Unique)
-    $diff = @(Compare-Object -ReferenceObject $expectedServers -DifferenceObject $actualServers)
-    if ($diff.Count -ne 0) {
-        Write-Host ("[mcp  ] {0,-22} -> FAILED: expected servers [{1}], got [{2}]." -f $pluginName, ($expectedServers -join ", "), ($actualServers -join ", "))
+    $args = @(Get-TomlStringArrayValue -Block $facadeBlock -Key "args")
+    if ("scripts/Start-McpServer.ps1" -notin $args) {
+        $facadeErrors += "args must include scripts/Start-McpServer.ps1"
+    }
+
+    $enabledTools = @(Get-TomlStringArrayValue -Block $facadeBlock -Key "enabled_tools")
+    $missingTools = @($expectedFacadeTools | Where-Object { $_ -notin $enabledTools })
+    if ($missingTools.Count -gt 0) {
+        $facadeErrors += ("enabled_tools is missing {0}" -f ($missingTools -join ", "))
+    }
+
+    if ($facadeErrors.Count -gt 0) {
         $failures++
+        Write-Host ("[stdio] powershell-mcp-facade -> FAILED: {0}." -f ($facadeErrors -join "; "))
+    }
+    elseif ($SkipSmokeTest) {
+        Write-Host "[stdio] powershell-mcp-facade -> config OK (smoke test skipped)."
     }
     else {
-        Write-Host ("[mcp  ] {0,-22} -> OK, servers: {1}." -f $pluginName, ($actualServers -join ", "))
-    }
-
-    foreach ($property in $config.mcpServers.PSObject.Properties) {
-        $name = $property.Name
-        $server = $property.Value
-        $type = if ($server.PSObject.Properties.Name -contains "type") { [string]$server.type } else { "stdio" }
-
-        if ($type -eq "http") {
-            Write-Host ("[http ] {0,-22} -> {1}" -f $name, $server.url)
-            continue
-        }
-
-        if ($name -ne "powershell-mcp-facade") {
-            Write-Host ("[stdio] {0,-22} -> {1} (smoke test skipped)" -f $name, $server.command)
-            continue
-        }
-
-        if ($SkipSmokeTest) {
-            Write-Host ("[stdio] {0,-22} -> {1} (smoke test skipped)" -f $name, $server.command)
-            continue
-        }
-
-        $arguments = @()
-        foreach ($arg in $server.args) { $arguments += [string]$arg }
-        $cwd = if ($server.PSObject.Properties.Name -contains "cwd" -and -not [string]::IsNullOrWhiteSpace([string]$server.cwd)) {
-            [string]$server.cwd
-        } else {
-            $projectRoot
-        }
-
         try {
-            $toolNames = @(Invoke-StdioSmokeTest -Command ([string]$server.command) -Arguments $arguments -WorkingDirectory $cwd)
-            $missing = @($expectedFacadeTools | Where-Object { $_ -notin $toolNames })
-            $unexpected = @($toolNames | Where-Object { $_ -notin $expectedFacadeTools })
+            $scriptPath = Join-Path $projectRoot "scripts/Start-McpServer.ps1"
+            $smokeArgs = @("-NoProfile", "-ExecutionPolicy", "RemoteSigned", "-File", $scriptPath)
+            $toolNames = @(Invoke-StdioSmokeTest -Command "powershell" -Arguments $smokeArgs -WorkingDirectory $projectRoot)
+            $missingTools = @($expectedFacadeTools | Where-Object { $_ -notin $toolNames })
+            $unexpectedTools = @($toolNames | Where-Object { $_ -notin $expectedFacadeTools })
 
-            if ($missing.Count -gt 0 -or $unexpected.Count -gt 0) {
+            if ($missingTools.Count -gt 0 -or $unexpectedTools.Count -gt 0) {
                 $failures++
-                Write-Host ("[stdio] {0,-22} -> FAILED: expected tools [{1}], got [{2}]." -f $name, ($expectedFacadeTools -join ", "), ($toolNames -join ", "))
-                if ($missing.Count -gt 0) {
-                    Write-Host ("         Missing: {0}" -f ($missing -join ", "))
+                Write-Host ("[stdio] powershell-mcp-facade -> FAILED: expected tools [{0}], got [{1}]." -f ($expectedFacadeTools -join ", "), ($toolNames -join ", "))
+                if ($missingTools.Count -gt 0) {
+                    Write-Host ("         Missing: {0}" -f ($missingTools -join ", "))
                 }
-                if ($unexpected.Count -gt 0) {
-                    Write-Host ("         Unexpected: {0}" -f ($unexpected -join ", "))
+                if ($unexpectedTools.Count -gt 0) {
+                    Write-Host ("         Unexpected: {0}" -f ($unexpectedTools -join ", "))
                 }
             }
             else {
-                Write-Host ("[stdio] {0,-22} -> OK, tools/list returned {1} tool(s): {2}." -f $name, $toolNames.Count, ($toolNames -join ", "))
+                Write-Host ("[stdio] powershell-mcp-facade -> OK, tools/list returned {0} tool(s): {1}." -f $toolNames.Count, ($toolNames -join ", "))
             }
         }
         catch {
             $failures++
-            Write-Host ("[stdio] {0,-22} -> FAILED: {1}" -f $name, $_.Exception.Message)
+            Write-Host ("[stdio] powershell-mcp-facade -> FAILED: {0}" -f $_.Exception.Message)
         }
     }
+}
+
+if ($blocks.ContainsKey("jira-internal")) {
+    $url = Get-TomlStringValue -Block ([string]$blocks["jira-internal"]) -Key "url"
+    if ($url -eq "https://jmcp.acumatica.com/mcp") {
+        Write-Host ("[http ] jira-internal        -> {0}" -f $url)
+    }
+    else {
+        $failures++
+        Write-Host ("[http ] jira-internal        -> FAILED: expected https://jmcp.acumatica.com/mcp, got {0}" -f $url)
+    }
+}
+
+if ($blocks.ContainsKey("wiki-internal")) {
+    $url = Get-TomlStringValue -Block ([string]$blocks["wiki-internal"]) -Key "url"
+    if ($url -eq "https://wmcp.acumatica.com/mcp") {
+        Write-Host ("[http ] wiki-internal        -> {0}" -f $url)
+    }
+    else {
+        $failures++
+        Write-Host ("[http ] wiki-internal        -> FAILED: expected https://wmcp.acumatica.com/mcp, got {0}" -f $url)
+    }
+}
+
+$dbProxyBaseUrl = Get-DbProxyBaseUrl -ProjectRoot $projectRoot
+try {
+    $dbStatus = Invoke-RestMethod -Uri ("{0}/status" -f $dbProxyBaseUrl) -Method Get -TimeoutSec 3 -ErrorAction Stop
+    $backendVersion = ""
+    if ($null -ne $dbStatus.result -and $null -ne $dbStatus.result.backendVersion) {
+        $backendVersion = [string]$dbStatus.result.backendVersion
+    }
+
+    if ($backendVersion -eq $expectedDbProxyBackendVersion) {
+        Write-Host ("[db   ] db-proxy              -> /status OK (backendVersion={0})" -f $backendVersion)
+    }
+    else {
+        $failures++
+        Write-Host ("[db   ] db-proxy              -> FAILED: {0}/status reports backendVersion={1}; expected {2}." -f $dbProxyBaseUrl, $backendVersion, $expectedDbProxyBackendVersion)
+    }
+}
+catch {
+    Write-Host ("[db   ] db-proxy              -> /status not reachable on {0} (use scripts/Start-Codex.ps1 -ProxyOnly to start it)" -f $dbProxyBaseUrl)
 }
 
 if ($failures -gt 0) {
@@ -224,5 +241,5 @@ if ($failures -gt 0) {
 }
 
 Write-Host ""
-Write-Host "Codex MCP configuration looks healthy. Run scripts/Start-Codex.ps1 and check /mcp after Codex starts."
+Write-Host "Codex MCP project configuration looks healthy. Run scripts/Start-Codex.ps1 and check /mcp after Codex starts."
 exit 0
