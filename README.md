@@ -52,9 +52,29 @@ Codex receives the MCP servers through the project-local plugin described by
 | `jira-internal` | http | Internal Jira read path. |
 | `wiki-internal` | http | Internal Confluence/Wiki read path. |
 
-The three remote services require the Acumatica corporate network and any OAuth
-flow they request on first use. The SQL facade can list its tools even when
+The two remote HTTP services require the Acumatica corporate network and any
+OAuth flow they request on first use. The SQL facade can list its tools even when
 `db-proxy` is down, but `sql.select` calls require the backend.
+
+## Clean Machine Prerequisites and Risks
+
+- Run setup from Windows PowerShell where local `.ps1` scripts are allowed by
+  corporate policy. This workspace does not pass execution-policy override
+  flags in documented commands or generated MCP server definitions.
+- If PowerShell blocks script execution on a clean computer, use the approved
+  IT process for trusted local scripts instead of bypassing policy in the
+  command line.
+- Codex starts the local SQL MCP facade through a PowerShell `.ps1` file. If
+  script execution is blocked, `/mcp` will not show a healthy
+  `powershell-mcp-facade` until the workspace scripts are allowed by policy.
+- `codex` must be installed and available in `PATH`.
+- Jira and Wiki MCP access requires the Acumatica corporate network and the
+  OAuth flow requested by Codex on first use.
+- SQL diagnostics require the `SQLPS` module / `Invoke-Sqlcmd` and access to the
+  target SQL Server. MCP registration and Jira/Wiki usage do not require SQLPS.
+- The product source checkout is not included. Place a clone, worktree,
+  junction, or symlink under `code/`, or provide another path when source-code
+  workflows need it.
 
 ## Getting Started
 
