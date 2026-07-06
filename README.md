@@ -200,8 +200,8 @@ Lower-level access and analysis skills include `jira-access`, `wiki-access`,
 `local-change-access`, `database-access`, `jira-similar-search`,
 `related-items-analysis`, `source-code-analysis`,
 `migration-script-consistency-review`, `system-diagnostics-analysis`,
-`database-root-cause-analysis`, `jira-comment-drafting`, and
-`acumatica-session-notes`.
+`database-root-cause-analysis`, `root-cause-origin-analysis`,
+`jira-comment-drafting`, and `acumatica-session-notes`.
 
 ## Safety Model
 

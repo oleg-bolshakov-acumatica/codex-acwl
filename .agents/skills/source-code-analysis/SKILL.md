@@ -13,6 +13,8 @@ The goal is to identify likely product code paths, safeguards, state transitions
 
 Use Jira, local docs, code search, SQL evidence, related items, linked Wiki pages, endpoint definitions, Generic Inquiry definitions, and reports to identify likely source entry points or affected paths.
 
+When static analysis identifies a concrete defect anchor and the analysis needs to know which prior feature, ChangeRequest, PR, or commit introduced it, use `root-cause-origin-analysis` for the git archaeology. Do not treat the last `git blame` touch as origin without checking whether it actually introduced the defective logic.
+
 ## Trigger Point
 
 Run this skill only after the main issue context has been exhausted or cannot be used:

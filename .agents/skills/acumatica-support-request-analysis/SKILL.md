@@ -27,6 +27,7 @@ Use only the designated repository skills or MCP paths for external context. `ji
 - `related-items-analysis` for explicit linked Jira items, mentioned issue keys, Wiki/PR references, and heuristic similar issue analysis.
 - `jira-comment-drafting` for end-of-analysis Jira comment proposals that answer explicit questions from Jira comments or summarize findings, workarounds, SQL detection/correction proposals, related known issues, fix-lineage, or missing validation; do not post comments automatically.
 - `source-code-analysis` for static analysis of the local `code` source repository when Jira, related/similar items, and database analysis do not establish root cause.
+- `root-cause-origin-analysis` for the shared git-archaeology methodology (blame, `log -S`/`-G`, `show`) that identifies the introducing feature/ChangeRequest/PR/commit and its Jira item behind the current behavior; it backs Stage 6.5 and the `## 6.5. Root-Cause Origin Item` report section.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, or browser access when the designated MCP/skill path is available.
 Do not request approval for read-only SQL needed for diagnosis.
@@ -167,6 +168,8 @@ Keep excerpts short, usually 5-25 lines. Use several focused excerpts instead of
 ### Stage 6.5. Root-Cause Origin Item Search
 
 Use this stage when source code, related Jira, Wiki/spec, git history, PR context, or system diagnostics suggest that the current behavior was introduced or materially shaped by a prior Jira item, feature, ChangeRequest, Bug, PR, migration, commit, or spec.
+
+Use the `root-cause-origin-analysis` skill for the methodology (defect anchor, correct version branch, `blame` -> introduced-vs-last-touch via `log -S`/`-G`, `show`, and commit -> Jira -> PR mapping). The search order and origin-relationship classification below are that skill's contract applied to this stage.
 
 Search order:
 

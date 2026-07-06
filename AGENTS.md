@@ -31,6 +31,7 @@ Use only the designated repository skills for external context:
 - `jira-similar-search` for likely similar Bugs or Support Requests (agent-driven JQL through `jira-internal`, ranked locally).
 - `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal`, including footer and inline comments.
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
+- `root-cause-origin-analysis` for establishing which prior feature/ChangeRequest/PR/commit and its Jira item introduced a defect, via read-only git archaeology (`blame`, `log -S`/`-G`, `show`) over `code/` mapped to Jira.
 - `database-access` for read-only SQL evidence through the `powershell-mcp-facade` `sql.select` tool.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.
@@ -118,6 +119,7 @@ This principle governs the secondary mechanics of git, build, and write executio
 - Use `database-access` only for read-only diagnosis or verification. Use `SELECT` only. Use `COMPANYID` for tenant-partitioned tables when identified. Do not treat cross-tenant matches as confirmation.
 - Use `system-diagnostics-analysis` only when environment, product version, branch choice, customizations, upgrade history, or schema discovery can change the conclusion, implementation plan, or validation.
 - When changed files include `WebSites/Pure/DB/MSSQL/*.sql`, use `migration-script-consistency-review`. The `MSSQL` directory name is historical; determine database applicability from script tags. Treat `ALTER`, `CREATE`, and `DROP` in migration scripts as suspicious.
+- When analyzing a bug (Support Request or bugfix), establish the root-cause origin with `root-cause-origin-analysis` - the introducing feature/ChangeRequest/PR/commit and its Jira item - before forming a fix plan whenever a defect anchor exists. It is mandatory to attempt and report the result; when the origin cannot be established, state that explicitly with the reason. Inability to establish origin does not by itself block a fix or the analysis.
 
 ## Finding Evidence Format
 
@@ -149,5 +151,6 @@ Before finalizing:
 - facts and hypotheses separated;
 - branch/version context verified when it matters;
 - SQL remained read-only and tenant-scoped when needed;
+- root-cause origin analysis was attempted and reported for bug analyses when a defect anchor existed, or the reason it was not established/not applicable was stated;
 - scope remained within the selected mode or stop reason was reported;
 - validation and residual uncertainty are clear.

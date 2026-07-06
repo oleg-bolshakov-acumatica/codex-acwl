@@ -19,6 +19,7 @@ Use repository-approved paths only:
 - Use `database-access` for read-only SQL evidence when customer data, backup data, tenant state, or version context can confirm or refute a hypothesis.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect diagnosis, branch choice, or validation.
 - Use `local-change-access` when a related change set exists and its diff matters, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
+- Use `root-cause-origin-analysis` to establish which prior feature/ChangeRequest/PR/commit (and its Jira item) introduced the defect, before proposing the fix.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
 
@@ -56,10 +57,11 @@ When version-specific behavior matters:
 3. Retrieve relevant Wiki links and read required local docs.
 4. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
 5. Diagnose root cause from Jira, Wiki, docs, code, tests, and optional SQL evidence.
-6. Confirm the fix remains small, clear, and safely validatable.
-7. Implement the minimal change.
-8. Run focused validation.
-9. Report root cause, fix, validation, and limitations.
+6. Establish root-cause origin via `root-cause-origin-analysis` before the fix plan: identify the introducing feature/ChangeRequest/PR/commit and its Jira item with a concrete `path:line@commit` link. This is mandatory to attempt and mandatory to report; if the origin cannot be established, state that explicitly with the reason (see the skill's "Not established" / "Not applicable" outcomes). Inability to establish origin does not block the fix.
+7. Confirm the fix remains small, clear, and safely validatable.
+8. Implement the minimal change.
+9. Run focused validation.
+10. Report root cause, root-cause origin (or why it is not established), fix, validation, and limitations.
 
 For customer-backup or data-dependent bugs, capture database/server/backup/tenant/`COMPANYID` when present. Use tenant-scoped SQL for tenant-partitioned tables and do not treat cross-tenant matches as confirmation.
 
@@ -100,6 +102,7 @@ Use this final structure:
 
 1. **Task understanding**
 2. **Root cause** with confidence: Confirmed, Likely, or Unclear
-3. **Fix summary**
-4. **Validation**
-5. **Risks or limitations**
+3. **Root cause origin** - introducing Jira item + PR + `path:line@commit`, with confidence; or an explicit "not established / not applicable" statement with the reason
+4. **Fix summary**
+5. **Validation**
+6. **Risks or limitations**
