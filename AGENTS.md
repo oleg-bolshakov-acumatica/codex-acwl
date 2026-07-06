@@ -8,13 +8,13 @@ The project-local MCP servers are declared in the trusted Codex project config:
 
 - `.codex/config.toml`
 
-Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed project MCP server set for this workspace is:
+Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed workspace MCP server set for this workspace is:
 
 - `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira/Wiki/Bitbucket tools.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
 
-If `/mcp` does not show all expected servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths:
+If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths. Globally installed Codex servers may also appear in `/mcp` and are outside this workspace contract:
 
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
 - `jira-internal` and `wiki-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.

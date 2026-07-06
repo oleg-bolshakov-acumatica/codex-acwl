@@ -3,8 +3,8 @@
     "id": "powershell-mcp-facade",
     "name": "PowerShell MCP Facade Server",
     "version": "0.6.0",
-    "protocolVersion": "2024-11-05",
-    "supportedProtocolVersions": ["2024-11-05", "2025-11-25"],
+    "protocolVersion": "2025-06-18",
+    "supportedProtocolVersions": ["2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25"],
     "transport": "stdio",
     "supportContact": "oleg.bolshakov@acumatica.com"
   },
@@ -15,9 +15,5 @@
       "baseUrl": "http://127.0.0.1:8765",
       "requestTimeoutSec": 45
     }
-  },
-  "resourceProxy": {
-    "serverName": "PowerShell Resource Proxy Server",
-    "logRequests": true
   }
 }

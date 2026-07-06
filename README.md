@@ -25,11 +25,8 @@ humans setting up and maintaining the workspace.
 codex-acwl/
   AGENTS.md                               Always-on operating contract.
   .codex/config.toml                      Codex project MCP configuration.
-  .codex-mcp.json                        Legacy MCP plugin bootstrap metadata.
   .agents/
-    plugins/marketplace.json             Legacy project-local plugin marketplace.
     skills/                              Workflow and access skills.
-  plugins/acumatica-mcp-facade/          Legacy Codex plugin manifest and MCP template.
   core/                                  PowerShell modules for the SQL-only facade.
   config/server.config.json              Facade server and backend configuration.
   db-proxy/                              Local read-only SQL backend.
@@ -47,10 +44,9 @@ Codex receives the fixed MCP server set from `.codex/config.toml` when the
 workspace is trusted. `scripts/Start-Codex.ps1` launches Codex with
 `-C <workspace-root>` so the project config is in scope.
 
-The older project-local plugin bootstrap files (`.codex-mcp.json`,
-`.agents/plugins/marketplace.json`, and `plugins/acumatica-mcp-facade/`) are
-retained as legacy metadata only. Normal startup no longer patches
-`~/.codex/config.toml` or a plugin cache.
+This workspace does not use a project-local Codex plugin or patch
+`~/.codex/config.toml`. The repository-local MCP configuration is the only
+workspace-owned source for these servers.
 
 | Server | Transport | Purpose |
 | --- | --- | --- |
@@ -91,8 +87,10 @@ scripts/Start-Codex.ps1
 
 ## MCP Availability Checks
 
-If `/mcp` does not list all three expected servers, treat that as configuration
-or service availability first, not as a reason to bypass the approved MCP paths.
+If `/mcp` does not list all three expected workspace servers, treat that as
+configuration or service availability first, not as a reason to bypass the
+approved MCP paths. Codex may also show globally installed servers that are not
+owned by this workspace.
 
 ```powershell
 scripts/Check-Mcp.ps1

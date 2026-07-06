@@ -11,7 +11,7 @@ The project-local MCP servers are declared in `.codex/config.toml` and loaded by
 
 - `jira-internal`, `wiki-internal`.
 
-`jira-internal` and `wiki-internal` are the Acumatica-hosted HTTP MCP servers with OAuth and read-only scope; they are the primary Jira and Wiki context path for Support Request analysis. If `/mcp` does not show all expected servers, treat it as an MCP configuration or backend-availability problem first: run `scripts/Check-Mcp.ps1` and confirm the db-proxy (`127.0.0.1:8765`) backend is running. Do not bypass these servers with REST, provider modules, or ad hoc scripts.
+`jira-internal` and `wiki-internal` are the Acumatica-hosted HTTP MCP servers with OAuth and read-only scope; they are the primary Jira and Wiki context path for Support Request analysis. If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem first: run `scripts/Check-Mcp.ps1` and confirm the db-proxy (`127.0.0.1:8765`) backend is running. Do not bypass these servers with REST, provider modules, or ad hoc scripts.
 
 ## Highest-Priority Context Access Rule
 
