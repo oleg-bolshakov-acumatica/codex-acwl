@@ -10,7 +10,7 @@ The project-local MCP servers are declared in the trusted Codex project config:
 
 Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed workspace MCP server set for this workspace is:
 
-- `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira/Wiki/Bitbucket tools.
+- `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira, Wiki, or PR tools.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
 
@@ -21,7 +21,7 @@ If `/mcp` does not show all expected workspace servers, treat it as an MCP confi
 
 Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the configured project MCP servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
 
-This workspace is read-only by design (the only write-capable work is local source edits in the bugfix/feature modes). Codex approvals and the SQL guardrails are a convenience, not a substitute for the safety rules below.
+This workspace is read-only by default. Local source/Git changes are allowed only in the bugfix, feature-development, and backport modes under their approval rules. Codex approvals and the SQL guardrails are a convenience, not a substitute for the safety rules below.
 
 ## Highest-Priority Context Access Rule
 
@@ -31,14 +31,15 @@ Use only the designated repository skills for external context:
 - `jira-similar-search` for likely similar Bugs or Support Requests (agent-driven JQL through `jira-internal`, ranked locally).
 - `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal`, including footer and inline comments.
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
+- `acumatica-git-workflow` for Jira-related branch/commit discovery and approval-gated Git mutations.
 - `root-cause-origin-analysis` for establishing which prior feature/ChangeRequest/PR/commit and its Jira item introduced a defect, via read-only git archaeology (`blame`, `log -S`/`-G`, `show`) over `code/` mapped to Jira.
 - `database-access` for read-only SQL evidence through the `powershell-mcp-facade` `sql.select` tool.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.
 Do not request approval for read-only SQL needed for diagnosis.
-Do not perform Jira, Wiki, or database actions beyond the read-only actions described by the corresponding skills. Local source edits are allowed only within the write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`) and follow their approval rules.
+Do not perform Jira, Wiki, or database actions beyond the read-only actions described by the corresponding skills. Local source/Git changes are allowed only within the write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`, `acumatica-bug-backport`) and follow their approval rules.
 
-There is no Bitbucket/PR service and no RAG Memory in this workspace. A pull request is inspected as a git branch or commit range in `code/`; map a PR id/URL to a branch using Jira Development data first.
+There is no remote PR service or memory service in this workspace. A pull request is inspected as a git branch or commit range in `code/`; map a PR id/URL to a branch using Jira Development data first.
 
 ## Mode Router
 
@@ -48,6 +49,7 @@ Use high-level workflow skills for task-specific context. Load only the relevant
 - `acumatica-code-review` - read-only review of a branch, change set, or diff against Jira intent, architecture, domain, migration, database, test, and maintainability risk.
 - `acumatica-spec-verification` - read-only verification that an implementation covers a functional specification from Jira and/or Wiki before QA.
 - `acumatica-small-bugfix` - minimal low-risk correction for a narrow defect when expected behavior, base branch, and validation are sufficiently clear.
+- `acumatica-bug-backport` - approval-gated creation of a local Service Pack or Patch backport branch and commit from an existing source fix and existing backport Bug; stops before push, pull request, Jira workflow changes, or cascade merge.
 - `acumatica-feature-development` - iterative feature implementation from a Jira item and functional specification, with scope ledger and requirement coverage.
 - `functional-spec-risk-analysis` - read-only analysis of a functional specification before implementation for contradictions, ambiguity, lifecycle gaps, persistence/source-of-truth risk, and Acumatica implementability.
 
@@ -66,7 +68,9 @@ Default source repository location:
 
 - `code`
 
-The `code` directory is not part of this workspace scaffold and should not be copied from older workspaces as part of setup. Before running Git commands or code-path verification, resolve the repository path first. Use `code` only when it exists and contains `.git`. If `code` is missing or is not a Git repository, ask for the correct repository path before relying on local Git state or source-code evidence. Do not run Git commands from the workspace root unless that root is itself the configured Git repository.
+The `code` directory is not part of this workspace scaffold and should not be copied from older workspaces as part of setup. Before running Git commands or code-path verification, resolve the repository path first. Use `code` only when `git -C code rev-parse --is-inside-work-tree` confirms it; `.git` may be a directory or a worktree pointer file. If `code` is missing or is not a Git repository, ask for the correct repository path before relying on local Git state or source-code evidence. Do not run product Git commands from the workspace root unless that root is itself the configured product repository.
+
+Use `acumatica-git-workflow` for Jira-related branch, commit, and PR discovery and for task-branch, staging, commit, or push workflows. Read-only Git discovery may run without workflow confirmation. Every non-read-only Git operation, including fetch and branch switching, requires explicit user confirmation; a generic implementation or analysis request is not confirmation. Before creating a branch from stable, refresh that stable ref with a confirmed fetch and branch from the verified remote-tracking ref.
 
 Local docs are authoritative context. Mode skills decide which docs must be loaded, but these are the standard sources:
 
@@ -90,6 +94,7 @@ Mention missing relevant docs in the final result and continue with available so
 - Never contradict local docs silently; call out docs/code/data discrepancies.
 - Never discard user changes or silently clean the working tree.
 - Never switch branches blindly in a dirty working tree.
+- Never run a non-read-only Git operation without explicit user confirmation for that operation or a clearly enumerated bounded batch.
 - Prefer git branch/range inspection in `code/` when a local checkout is unnecessary for deeper work.
 - Never execute state-changing SQL or administrative database operations.
 - If requirements, branch/range, baseline, repository path, or validation path cannot be identified confidently, stop and report the missing prerequisite.
@@ -106,7 +111,7 @@ Git topology, build/validation execution, and write-operation execution are prop
 - When an environment-specific action is needed (resolve a repo path, fetch a ref, build, run a test, create a branch, commit), state the options and the trade-offs, ask when the choice is genuinely the user's, and proceed with a sensible default only when one clearly exists and is read-only/safe.
 - Treat a resolved environment choice as session context: record it in session notes when the work may resume or hand off, so the next pass does not re-ask.
 
-This principle governs the secondary mechanics of git, build, and write execution so the mode skills can stay focused on methodology. The write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`) still follow their own approval and stop rules for any change to source.
+This principle governs the secondary mechanics of git, build, and write execution so the mode skills can stay focused on methodology. The write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`, `acumatica-bug-backport`) still follow their own approval and stop rules for any source/Git change.
 
 ## Shared Review and Diagnosis Rules
 
@@ -145,11 +150,12 @@ Before finalizing:
 
 - correct high-level mode skill selected;
 - Jira/branch/range/repository/spec context resolved or limitation stated;
-- required low-level skills used for Jira, Wiki, local change set, SQL, migration scripts, and similarity search when those sources are used;
+- required low-level skills used for Jira, Wiki, local change set, Git workflow, SQL, migration scripts, and similarity search when those sources or operations are used;
 - explicit links considered before similarity search;
 - changed migration scripts reviewed with `migration-script-consistency-review`, or absence stated when relevant to review/verification;
 - facts and hypotheses separated;
 - branch/version context verified when it matters;
+- non-read-only Git operations were explicitly confirmed and a new task branch, when created, used a freshly fetched stable ref;
 - SQL remained read-only and tenant-scoped when needed;
 - root-cause origin analysis was attempted and reported for bug analyses when a defect anchor existed, or the reason it was not established/not applicable was stated;
 - scope remained within the selected mode or stop reason was reported;

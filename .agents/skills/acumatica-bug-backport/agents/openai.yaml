@@ -1,0 +1,4 @@
+interface:
+  display_name: "Acumatica Bug Backport"
+  short_description: "Create validated local Service Pack and Patch backports"
+  default_prompt: "Use $acumatica-bug-backport to create and validate a local Service Pack or Patch backport branch and commit."

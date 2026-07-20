@@ -1,6 +1,6 @@
 ---
 name: source-code-analysis
-description: Use this skill for static Acumatica source-code analysis during Support Request investigation when a root cause remains unclear after Jira title/description/comments, explicit/similar Jira items, and database analysis is unavailable, impossible, or inconclusive. Resolve the local product repository, derive and verify the item-specific version branch, perform necessary local Git operations to inspect that branch, inspect relevant code paths, and propose likely root causes or reproduction scenarios.
+description: Perform static Acumatica source analysis when a Support Request root cause remains unclear after Jira, related-item, and available database evidence. Resolve and verify the version-specific product branch, trace relevant code paths, and propose evidence-backed causes or reproduction scenarios.
 ---
 
 # Source Code Analysis Skill
@@ -12,6 +12,8 @@ Use this skill to perform static source-code analysis for an Acumatica Support R
 The goal is to identify likely product code paths, safeguards, state transitions, missing checks, version-specific behavior, and plausible reproduction sequences. Code analysis can strongly support a hypothesis, but it does not prove the current customer's data state unless paired with Jira, SQL, Wiki, PR, or other direct evidence.
 
 Use Jira, local docs, code search, SQL evidence, related items, linked Wiki pages, endpoint definitions, Generic Inquiry definitions, and reports to identify likely source entry points or affected paths.
+
+Use `acumatica-git-workflow` for read-only branch/commit/PR discovery and its approval boundary for any Git operation needed to inspect the correct version.
 
 When static analysis identifies a concrete defect anchor and the analysis needs to know which prior feature, ChangeRequest, PR, or commit introduced it, use `root-cause-origin-analysis` for the git archaeology. Do not treat the last `git blame` touch as origin without checking whether it actually introduced the defective logic.
 
@@ -45,7 +47,7 @@ Before any Git or source-code evidence:
 3. Do not run Git commands from the agent workspace root unless that root is itself the product repository.
 4. Use `git -C code ...` or set the shell working directory to `code`.
 
-For Support Request investigation in this repository, treat the local product repository as an analysis checkout. Code inspection is read-only with respect to product source: do not edit product code as part of diagnosis and never push. Local Git operations needed to reach the item-specific branch are allowed and should be requested explicitly when sandbox, identity, or ownership restrictions require user-context execution.
+For Support Request investigation, treat the local product repository as an analysis checkout. Do not edit, stage, commit, or push product code. Any Git mutation needed to reach an item-specific branch requires explicit user confirmation.
 
 Useful checks:
 
@@ -55,7 +57,7 @@ git -C code status --short --branch
 git -C code branch --show-current
 ```
 
-If the worktree has uncommitted changes, inspect them before switching. In the support-case investigation checkout, dirty state is not automatically a blocker: if the changes are unrelated or only prevent switching to the correct branch, use local Git operations needed to reach the correct branch after clearly stating the intent. Do not preserve or create product-source edits as part of the investigation.
+If the worktree has uncommitted changes, inspect and preserve them. Do not switch, stash, restore, reset, or clean without explicit user confirmation.
 
 ## Branch Selection
 
@@ -85,51 +87,16 @@ Before relying on code evidence:
 
 - verify the current local branch;
 - check whether the derived branch exists locally or remotely;
-- switch to the derived branch or another branch proven by Jira/DB/PR evidence;
+- inspect the derived ref, or switch to a branch proven by Jira/DB/PR evidence only after explicit user confirmation;
 - report branch mismatch or unavailable branch in the analysis.
 
 Static analysis on the wrong branch can still be useful for orientation, but must not be presented as version-specific evidence. Do not stop at the current branch just because Git needs additional local setup; request the needed Git operation and continue unless the branch cannot be resolved.
 
-## Safe Git Practices
+## Git Safety
 
-Allowed normal checks:
+Use `acumatica-git-workflow`. Run read-only status, ref, log, diff, worktree, and remote discovery automatically. Fetch, switch, checkout, stash, restore, reset, clean, or Git configuration writes require explicit user confirmation even in the analysis checkout; a generic request to analyze the Support Request is not confirmation.
 
-```powershell
-git -C code status --short --branch
-git -C code branch --show-current
-git -C code branch --list <branch>
-git -C code branch -r --list *<branch>
-```
-
-Use `git fetch` only when remote branch discovery is needed and the environment allows it.
-
-If Git refuses to operate because of `safe.directory` / dubious ownership, request user-context execution instead of treating source analysis as blocked. Prefer a one-command override when possible:
-
-```powershell
-git -c safe.directory=<absolute-path-to-code-checkout> -C code status --short --branch
-```
-
-If repeated Git commands are needed, request adding the analysis checkout as a safe directory:
-
-```powershell
-git config --global --add safe.directory <absolute-path-to-code-checkout>
-```
-
-Before switching:
-
-```powershell
-git -C code status --short
-```
-
-If clean and the branch exists:
-
-```powershell
-git -C code switch <derived-branch>
-```
-
-If dirty state blocks switching in the support-case analysis checkout, local cleanup is acceptable when it is required to inspect the correct code version and the user/project policy allows it. First state what will be discarded or moved, then use the narrowest local Git operation that reaches the needed branch, such as `git stash push -u`, `git restore`, `git clean`, or `git reset --hard`. Never push, merge to shared branches, or create product-code changes as part of the analysis.
-
-Outside this support-case investigation checkout, do not use destructive Git commands such as `reset --hard`, `checkout -- .`, or clean operations unless the user explicitly requests them.
+Prefer inspecting refs without changing the checkout. If `safe.directory` or ownership prevents read-only inspection, request user-context execution. Do not change Git configuration without explicit confirmation. Never edit, stage, commit, merge, or push product code during this analysis.
 
 ## Static Analysis Entry Points
 
@@ -230,9 +197,9 @@ Use confidence carefully:
 
 Static code evidence alone normally supports **Likely**, not **Confirmed**, unless the Jira item itself provides a deterministic reproduction that the code directly explains.
 
-## Source-Code Evidence Presentation
+## Source-Code Evidence and Report Format
 
-When citing code in the support report, make each source-code finding self-contained enough to read without opening the source file.
+Make each material code finding self-contained enough to verify without reconstructing the investigation.
 
 Include for each finding:
 
@@ -244,7 +211,7 @@ Include for each finding:
 - concise explanation of what the excerpt proves or only suggests;
 - limitations, especially branch mismatch, missing runtime data, uninspected customization code, or unvalidated database state.
 
-Keep excerpts focused, usually 5-25 lines. If a larger method matters, cite several small excerpts instead of pasting the full method. Do not rewrite the code inside excerpts; use `...` to mark omitted lines and state when the excerpt is shortened.
+Keep excerpts focused, usually 5-25 lines. Use several excerpts for a larger method. Preserve code verbatim; mark omissions with `...`.
 
 Do not cite only a source link or file path when source code is material evidence for the conclusion.
 
@@ -262,27 +229,11 @@ protected virtual void ReleaseDocument(PMRegister doc)
 }
 ```
 
-This supports the hypothesis that the release path copies `Billable` from the source transaction instead of recalculating it. It does not confirm that the customer document used this path without SQL or Jira reproduction evidence.
+Finding: the release path copies `Billable` instead of recalculating it.
+
+Impact on hypothesis: supports the proposed cause.
+
+Limitation: SQL or a Jira reproduction is still needed to prove that the customer document used this path.
 ````
 
-## Report Guidance
-
-In the support report, keep code findings concise:
-
-```text
-Code path checked: <branch or commit>, <files/classes/methods>
-Evidence: <full repository-relative file path>, <class/method/action/event>, <lines>, <short code excerpt>
-Finding: <what the code does>
-Impact on hypothesis: supports / weakens / rules out <hypothesis>
-Limitation: <branch mismatch, no DB validation, customization unknown, etc.>
-```
-
-Reference exact files/classes/methods and lines. Include short code excerpts for material findings, but do not paste long methods or unrelated blocks.
-
-If source analysis was skipped, state why:
-
-```text
-Not run because DB evidence already confirmed root cause.
-Not run because expected branch 2025r201 was unavailable locally.
-Not run because the issue is confirmed customization-specific and standard product code cannot answer it.
-```
+If source analysis is skipped, state the material reason, such as confirmed database evidence, unavailable required branch, or confirmed customization-only scope.

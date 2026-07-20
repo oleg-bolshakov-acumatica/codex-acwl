@@ -14,6 +14,7 @@ Diagnose a narrow defect, confirm the fix remains small and safely validatable, 
 Use repository-approved paths only:
 
 - Use `jira-access` for Jira bugs, support requests, comments, linked issues, and development metadata.
+- Use `acumatica-git-workflow` to discover Jira-related branches/PRs and to prepare or resume the `bugfix` branch.
 - Use `wiki-access` for linked Wiki context.
 - Use `jira-similar-search` only when explicit context is insufficient and similar issues can change diagnosis or scope.
 - Use `database-access` for read-only SQL evidence when customer data, backup data, tenant state, or version context can confirm or refute a hypothesis.
@@ -37,11 +38,7 @@ Read these only when they can affect branch choice, diagnosis, implementation ri
 
 ## Repository and Branch Rules
 
-Resolve the repository path before Git or code-path verification. The default path is `code`, but use it only when it exists and contains `.git`.
-
-Base branch is mandatory for a new bugfix branch. Determine it from user input, Jira context, or an existing branch/PR that clearly identifies it. If not confident, ask the user.
-
-Expected branch forms are `bugfix/<JIRA-TICKET-ID>-<base-branch>` or an explicit existing branch from Jira/PR metadata. Do not create a new bugfix branch from an arbitrary current branch. Do not switch branches in a dirty worktree unless the user explicitly approves.
+Use `acumatica-git-workflow` to resolve the repository, discover existing task branches and PR context, and prepare or resume a `bugfix` branch. Base branch is mandatory. A new branch must use the defined bugfix naming rule and a freshly fetched stable remote ref. Fetch, switch, branch creation, staging, commit, push, and every other non-read-only Git operation require explicit user confirmation.
 
 When version-specific behavior matters:
 
@@ -53,7 +50,7 @@ When version-specific behavior matters:
 ## Workflow
 
 1. Read the bug report, Jira context, relevant chronological comments, explicit linked issues, and similar issues only when needed.
-2. Resolve repository, branch/PR, baseline, and version context when relevant.
+2. Resolve repository, branch/PR, baseline, and version context with `acumatica-git-workflow`; obtain explicit confirmation before any required Git mutation.
 3. Retrieve relevant Wiki links and read required local docs.
 4. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
 5. Diagnose root cause from Jira, Wiki, docs, code, tests, and optional SQL evidence.

@@ -1,6 +1,6 @@
 ---
 name: database-root-cause-analysis
-description: Use this skill for high-level read-only database analysis of Acumatica Support Requests when root cause is not confirmed and SQL evidence can confirm, refute, or narrow hypotheses. It extracts backup/environment parameters, checks version/tenant context, builds tenant-scoped SELECT plans, traces document chains, and interprets database evidence using the lower-level database-access skill.
+description: Perform high-level read-only database analysis for Acumatica Support Requests when SQL evidence can confirm, refute, or narrow root-cause hypotheses. Extract environment/version/tenant context, build tenant-scoped SELECT plans, trace document chains, and interpret evidence through database-access.
 ---
 
 # Database Root-Cause Analysis Skill

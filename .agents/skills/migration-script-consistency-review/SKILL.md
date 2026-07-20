@@ -1,6 +1,6 @@
 ---
 name: migration-script-consistency-review
-description: Use this skill during Acumatica PR reviews and specification verification when changes touch migration scripts under WebSites/Pure/DB/MSSQL/*.sql. Performs manual static analysis of Acumatica data-migration blocks across DB-specific tags to find customer-upgrade risks such as NOT NULL violations, duplicate key/unique constraint violations, invalid foreign/check constraint data, unsafe tenant mapping, and inconsistent mssql/mysql/pgsql branches. Also use when PR changes may interact with DatabaseModel.sqlproj constraints during migration-script data updates.
+description: Review Acumatica migration scripts under WebSites/Pure/DB/MSSQL/*.sql for execution-metadata, cross-database, data-integrity, and customer-upgrade risks. Use during PR/spec review when migration SQL changes or interacts with DatabaseModel.sqlproj constraints.
 ---
 
 # Migration Script Consistency Review Skill
@@ -45,11 +45,13 @@ When a migration block writes to a table, manually inspect the target table defi
 
 1. Identify changed files under `WebSites/Pure/DB/MSSQL/*.sql`.
 2. Split the changed content into migration blocks using nearby `GO` separators and tags such as `MinVersion`, `OldHash`, `IfExists`, `SmartExecute`, and DB-specific `Native`/`Skip` tags.
-3. For each changed block, identify the database engines to which it applies. Compare parallel `mssql`, `mysql`, and `pgsql` branches when more than one branch is changed.
-4. Identify target tables and columns for each `INSERT`, `UPDATE`, and `DELETE`.
-5. Open the relevant `DatabaseModel` table files and inspect target constraints manually.
-6. Trace each target value back to its source expression. Treat source data as arbitrary valid customer data unless the script itself proves a narrower invariant.
-7. Report concrete upgrade risks as review findings. If the script may be safe only under an unstated data invariant, mark that as a risk or limitation rather than assuming it.
+3. Compare each changed block with the baseline and classify it as new or as a modification of an existing block.
+4. For each changed block, identify the database engines to which it applies. Compare parallel `mssql`, `mysql`, and `pgsql` branches when more than one branch is changed.
+5. Identify target tables and columns for each `INSERT`, `UPDATE`, and `DELETE`.
+6. Open the relevant `DatabaseModel` table files and inspect target constraints manually.
+7. Trace each target value back to its source expression. Treat source data as arbitrary valid customer data unless the script itself proves a narrower invariant.
+8. Check execution metadata, retry behavior, operational impact, and schema-order assumptions.
+9. Report concrete upgrade risks as review findings. If the script may be safe only under an unstated data invariant, mark that as a risk or limitation rather than assuming it.
 
 ## Required Checks
 
@@ -90,8 +92,21 @@ For DB-specific tags:
 
 For migration metadata:
 
-- `IfExists`, `MinVersion`, `OldHash`, and `SmartExecute` guards control execution conditions, but they do not prove data consistency;
+- distinguish a new block from a modified existing block before evaluating `MinVersion` and `OldHash`;
+- for a modified block, preserve the previous `MinVersion.Hash` as `OldHash` only when the current block must be treated as already applied on databases where the previous block ran;
+- if databases that ran the previous block still require correction, do not suppress the current work with that `OldHash`; prefer a separate idempotent corrective block with its own execution metadata;
+- keep the current `MinVersion` hash aligned with the current block instead of leaving the previous hash as its current identity;
+- verify that `IfExists`, `SmartExecute`, and database-specific guards match the intended installation and upgrade paths;
+- remember that `OldHash` suppresses execution when its hash is already recorded; it is not a request to rerun the changed block;
 - do not treat these tags as substitutes for checking nullability, uniqueness, tenant keys, or referential validity.
+
+For operational safety:
+
+- `INSERT`, `UPDATE`, and `DELETE` blocks are safe to retry or are deliberately protected from duplicate or partial effects;
+- destructive changes, narrowing conversions, truncation, overflow, and loss of historical values are prevented or explicitly justified;
+- required tables and columns exist at the migration stage where the block runs, including clean installation and supported upgrade paths;
+- full-table writes, large joins, and long transactions do not create an unreasonable lock, timeout, or transaction-log risk;
+- important migration joins, lookups, and anti-joins are supported by existing keys or indexes when expected data volume makes that necessary; add index findings only with query-path and schema evidence.
 
 ## Finding Guidance
 

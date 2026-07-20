@@ -28,6 +28,7 @@ The functional specification remains the primary source of business requirements
 - Use `docs/BUSINESS_MODEL.md` when PM/CN/PJ domain meaning, process semantics, terminology, or expected product behavior can change interpretation of the requirement.
 - Use `docs/DATABASE_MODEL.md` when table ownership, keys, relationships, projections, or physical join paths can change design or validation.
 - Use `system-diagnostics-analysis` when version, branch choice, customization state, upgrade history, or schema discovery can change the implementation or validation plan.
+- Use `acumatica-git-workflow` for Jira-related branch/PR discovery and for the approval-gated feature branch, staging, commit, and push workflow.
 - Use local source, endpoint definitions, Generic Inquiry definitions, reports, and linked Wiki documentation when exact DAC fields, relationships, OData, Contract-Based REST API, Generic Inquiry, or Help Wiki facts can change data-path tracing, design, exposed-surface risk, or validation.
 
 
@@ -77,7 +78,7 @@ Each iteration should be a coherent business slice that can be validated indepen
 2. Read `docs/ARCHITECTURE_RULES.md` and `docs/REFACTORINGS.md`; read `docs/BUSINESS_MODEL.md` and `docs/DATABASE_MODEL.md` only when they affect interpretation, design, branch choice, or validation.
 3. Read `docs/FEATURE_IMPLEMENTATION_PATTERNS.md` when the iteration includes business logic, posting/recalculation paths, reports, projections, currency/base amounts, UI computed values, or customization-sensitive placement.
 4. Use `system-diagnostics-analysis` when environment, version, customization, upgrade, schema, or branch-selection context can materially affect the slice.
-5. Resolve repository, branch, PR, and baseline context before relying on code evidence.
+5. Use `acumatica-git-workflow` to resolve repository, branch, PR, and baseline context. Read-only discovery needs no workflow confirmation; every Git mutation does.
 6. Use `acumatica-session-notes` to update relevant notes if the source of truth, scope, or known risks changed.
 
 ### 2. Inventory and Classify Requirements
@@ -121,11 +122,12 @@ Use [FEATURE_IMPLEMENTATION_PATTERNS.md](FEATURE_IMPLEMENTATION_PATTERNS.md) to 
 
 Before editing files:
 
-1. State the selected business slice.
-2. State what will not be touched in this iteration.
-3. Identify the central extension points and affected data paths.
-4. Identify customization impact and prefer overridable graph-level methods where useful.
-5. Identify focused validation commands and manual scenarios.
+1. Verify or prepare the Jira `feature` branch through `acumatica-git-workflow`. Creating a branch requires explicit confirmation and a freshly fetched stable ref.
+2. State the selected business slice.
+3. State what will not be touched in this iteration.
+4. Identify the central extension points and affected data paths.
+5. Identify customization impact and prefer overridable graph-level methods where useful.
+6. Identify focused validation commands and manual scenarios.
 
 Keep the slice small enough that a build and a manual acceptance scenario can give meaningful confidence.
 

@@ -2560,13 +2560,13 @@ DAC fields that should only be visible when a specific feature is installed SHOU
 - New screens forget to add the feature check for field visibility
 
 **Core Transformation (Target State):**
-- Add `FieldClass = nameof(FeaturesSet.featureName)` to the `[PXUIField]` attribute on the DAC field
+- Resolve the feature's `<Access FieldClass="...">` mapping in `Features.xml` and add the canonical token or constant to the `[PXUIField]` attribute
 - Remove redundant `SetVisible` calls from `RowSelected` handlers that duplicate this logic
 
 ```csharp
 // CORRECT - Declarative feature gating
 [PXDBInt]
-[PXUIField(DisplayName = "Cost Code", FieldClass = nameof(FeaturesSet.costCodes))]
+[PXUIField(DisplayName = "Cost Code", FieldClass = CostCodeAttribute.COSTCODE)]
 public virtual int? CostCodeID { get; set; }
 
 // INCORRECT - Imperative in every RowSelected
@@ -2585,10 +2585,11 @@ protected virtual void _(Events.RowSelected<SOOrder> e)
 
 **Risks / Side Effects:**
 - `FieldClass` hides the field entirely when the feature is off; ensure this is the desired behavior
+- A `FieldClass` token does not necessarily match the related `FeaturesSet` field name; verify the `Features.xml` mapping
 - Cannot express complex multi-condition visibility this way (use `RowSelected` for those)
 
 **Acceptance Criteria:**
-- Feature-gated fields use `FieldClass` where the condition is a single feature check
+- Feature-gated fields use the `FieldClass` token mapped by `Features.xml` where the condition is a single feature check
 - Redundant `SetVisible` calls removed
 - Visibility behavior unchanged
 

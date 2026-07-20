@@ -468,6 +468,20 @@ Use `[PXProtectedAccess]` only as a narrow extensibility bridge to an existing p
 - Do not expose mutable internal state merely for convenience.
 - Prefer adding a proper virtual method or protected extension point when you control the base code.
 
+### 5.6 Execution Contexts
+
+When changed logic branches on graph or event execution context, verify that validation, defaulting, persistence, security, and side effects remain correct in every supported path.
+
+Review the applicable context indicators, including:
+
+- `IsImport` and `IsExport`;
+- `IsImportFromExcel` and `IsCopyPasteContext`;
+- `IsContractBasedAPI` and `IsDacBasedOdataAPI`;
+- `IsMobile` and `UnattendedMode`;
+- `IsArchiveContext`, `Events.*.ExternalCall`, processing, and long-operation state when relevant.
+
+`IsImport` is an umbrella indicator that can also be true for export, API, copy-paste, and mobile execution. Use the more specific flags when behavior must differ. Do not treat `UnattendedMode` or another non-UI context as trusted execution or as authorization to bypass server-side validation and access rules.
+
 ---
 
 ## 6. Declarative Logic
@@ -622,7 +636,7 @@ Choose slot lifetime intentionally.
 ```csharp
 // Via FieldClass attribute
 [PXDBInt]
-[PXUIField(DisplayName = "Cost Code", FieldClass = nameof(FeaturesSet.costCodes))]
+[PXUIField(DisplayName = "Cost Code", FieldClass = CostCodeAttribute.COSTCODE)]
 public virtual int? CostCodeID { get; set; }
 
 // Dynamic visibility
@@ -632,6 +646,18 @@ protected virtual void _(Events.RowSelected<SOOrder> e)
     PXUIFieldAttribute.SetVisible<SOOrder.projectID>(e.Cache, e.Row, enabled);
 }
 ```
+
+`FieldClass` is an access token mapped by the applicable `Features.xml` (`NetTools/PX.Data/Access/Features.xml` for base features); it is not necessarily the name of the corresponding `FeaturesSet` field. Reuse the canonical token or constant declared for the feature instead of assuming `nameof(FeaturesSet.feature)` is valid.
+
+When feature-gated fields, actions, or screens change, verify the complete mapping:
+
+- the `FeaturesSet` field matches the relevant `<Feature Name="...">` entry;
+- each `FieldClass` used by code matches an `<Access FieldClass="...">` token;
+- referenced screen, cache, field, action, string-list, API, and mobile restrictions target the intended members;
+- `Rights`, `Operator`, `ApiEnabled`, and `MobileEnabled` semantics remain correct when present;
+- behavior is validated with the feature enabled and disabled.
+
+Feature access mapping controls framework visibility and access surfaces; it does not replace server-side authorization, row-level security, or business validation.
 
 ### 8.4 Feature Flag Rules
 - Do not create new `FeaturesSet` entries without explicit justification.
@@ -1090,6 +1116,27 @@ CREATE INDEX [TableName_IndexedField] ON [TableName] (
 - Unique Constraint: `[TableName_ColumnName]`
 - Foreign Key: `[TableName_FK_ReferencedTable]`
 - Index: `[TableName_ColumnName]`
+
+### 13.5 DAC and SQL Key Consistency
+
+When a persistent DAC or table definition changes:
+
+- classify the DAC as a physical table, extension table, projection, inherited/standalone DAC, or virtual DAC before comparing keys;
+- compare all database-bound DAC fields with `IsKey = true` to the SQL primary-key field set, treating `CompanyID` as an implicit tenant key when it is not represented by the DAC;
+- verify that the DAC `PK : PrimaryKeyOf<...>.By<...>` fields and `Find` parameters match the DAC key semantics;
+- for extension tables, verify the shared base-table key; for projections, verify result-row uniqueness against the projection sources instead of assuming a physical table mapping;
+- verify compatible field types, sizes, nullability, and identity semantics across DAC and schema definitions.
+
+The SQL primary-key column order does not have to match the logical DAC `PK` order when the field set is equivalent. Review SQL key order separately for index access and performance. Use the relationship rules in Section 3 for DAC `FK` declarations and FK-based BQL joins.
+
+### 13.6 Index Review
+
+Do not require a non-primary-key index for every new or changed table. Review index need from the functionality and changed access paths:
+
+- compare important `WHERE`, `JOIN`, `ORDER BY`, processing, and uniqueness paths with the primary key and existing indexes;
+- check usable left prefixes and tenant scoping such as `CompanyID` where applicable;
+- avoid redundant indexes and account for selectivity, expected volume, and write cost;
+- support a missing-index finding with both the decisive query path and current table/index definition. Treat the conclusion as a limitation or hypothesis when volume or selectivity evidence is unavailable.
 
 ---
 

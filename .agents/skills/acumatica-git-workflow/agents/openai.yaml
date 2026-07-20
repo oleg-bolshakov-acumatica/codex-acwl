@@ -1,0 +1,4 @@
+interface:
+  display_name: "Acumatica Git Workflow"
+  short_description: "Safe Jira-based Git workflow and discovery"
+  default_prompt: "Use $acumatica-git-workflow to discover Jira-related Git context or prepare an approval-gated branch and commit workflow."

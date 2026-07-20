@@ -1,6 +1,6 @@
 ---
 name: related-items-analysis
-description: Use this skill to analyze explicit linked Jira issues, linked fixing Bugs, issue keys mentioned in Jira text/comments, Wiki/PR references, and heuristic similar Jira items during Acumatica Support Request analysis. It orchestrates jira-access, jira-similar-search, wiki-access, and local-change-access to find relevant prior root causes, workarounds, fixes, fixed versions/builds, PR target branches, duplicates, regression boundaries, and recurrence patterns without treating weak matches as proof.
+description: Analyze linked or mentioned Jira items, fixing Bugs, Wiki/PR references, and heuristic similar issues during Support Request analysis. Use to validate prior causes, workarounds, fix lineage, version applicability, duplicates, regression boundaries, and recurrence without treating weak matches as proof.
 ---
 
 # Related Items Analysis Skill
@@ -18,7 +18,7 @@ Use these low-level skills as needed:
 - `jira-access` for explicit Jira issue reads;
 - `jira-similar-search` for heuristic Bug/SupportRequest similarity search;
 - `wiki-access` for relevant `wiki.acumatica.com` links found in issues, comments, or change-set context;
-- `local-change-access` to inspect a change set via git over the local `code/` repository when Jira development data or comments expose a PR/branch/commit reference. Map a PR to a branch via Jira Development data, then inspect that branch with read-only git; there is no Bitbucket path.
+- `local-change-access` to inspect a change set via git over the local `code/` repository when Jira development data or comments expose a PR/branch/commit reference. Map a PR to a branch via Jira Development data, then inspect that branch with read-only git.
 
 `jira-access` and `jira-similar-search` read Jira through the corporate `jira-internal` MCP server, and `wiki-access` reads Wiki through the corporate `wiki-internal` MCP server. These internal servers are the primary path for Jira/Wiki access, including capabilities such as direct JQL search, Confluence search, page tree, history/diff, labels, attachments, images, downloads, and view statistics.
 
@@ -104,7 +104,7 @@ Open relevant Wiki links through `wiki-access` when they may clarify:
 - implementation constraints;
 - unresolved inline/footer comments.
 
-Use `local-change-access` when Jira development data, related issues, or comments expose a specific PR/branch and the change set can affect root cause, fix confirmation, or workaround. Map the PR to a branch via Jira Development data, then inspect that branch with read-only git over the local `code/` repository; there is no Bitbucket path.
+Use `local-change-access` when Jira development data, related issues, or comments expose a specific PR/branch and the change set can affect root cause, fix confirmation, or workaround. Map the PR to a branch via Jira Development data, then inspect that branch with read-only git over the local `code/` repository.
 
 Treat the change set as evidence of what was changed, not as proof that the current customer's data followed that path unless current-case evidence supports it.
 
@@ -195,12 +195,12 @@ Do not call a candidate a duplicate unless Jira relationship/status or strong ev
 
 ## Output Guidance
 
-For the report, keep this concise.
+Report only the top 3-5 meaningful candidates.
 
 Suggested section:
 
 ```text
-IssueKey | Source | Relevance
+Key | Source | Why
 AC-123456 | explicit link | Resolved duplicate; same AP bill release error; workaround confirmed in comments.
 AC-234567 | similar search | Same PMTran billable flag asymmetry; useful hypothesis only, not proof.
 ```
@@ -208,13 +208,11 @@ AC-234567 | similar search | Same PMTran billable flag asymmetry; useful hypothe
 When linked fixing Bugs are relevant, add a compact fix-lineage table:
 
 ```text
-Fixing Bug | Source item/link | Status | Fixed In / Fix Version | PR target branch | Version impact | Relevance
-AC-123457 | bound to AC-123456 | Closed/Fixed | 25.200.0170 / 2025R2RC | 2025r200 | current build is before fix | Same known defect.
+Bug | Fix | PR branch | Applies? | Why
+AC-123457 | 25.200.0170 / 2025R2RC | 2025r200 | Current build is before fix | Same known defect; bound to AC-123456.
 ```
 
-Normally report the top 3 to 5 meaningful candidates.
-
-Also report the search attempts:
+Report search attempts only when they explain coverage, a retry, or a no-result conclusion:
 
 ```text
 Similarity Search Queries:

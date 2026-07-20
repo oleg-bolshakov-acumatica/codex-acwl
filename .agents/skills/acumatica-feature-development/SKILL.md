@@ -14,6 +14,7 @@ Implement features iteratively from an explicit functional specification. Keep s
 Use repository-approved paths only:
 
 - Use `jira-access` for Jira requirements, acceptance criteria, comments, linked issues, and development metadata.
+- Use `acumatica-git-workflow` to discover Jira-related branches/PRs and to prepare or resume the `feature` branch.
 - Use `wiki-access` for linked `wiki.acumatica.com` functional specifications, including comments and resolution state.
 - Use `local-change-access` when an existing change set must be inspected, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
 - Use `database-access` only for read-only diagnostics that can change interpretation, implementation risk, branch choice, or validation.
@@ -59,12 +60,13 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 ## Iteration Workflow
 
 1. Refresh Jira, Wiki specification, comments, local docs, branch/PR context, and existing session notes when needed.
-2. Inventory and classify requirements as ready, ambiguous, contradictory, deferred, or rejected for the current phase.
-3. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
-4. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
-5. Implement the minimal slice using existing Acumatica patterns.
-6. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope.
-7. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
+2. Use `acumatica-git-workflow` to discover or verify the task branch. Before editing, resume or prepare a `feature` branch; a new branch must use a freshly fetched stable ref, and every Git mutation requires explicit user confirmation.
+3. Inventory and classify requirements as ready, ambiguous, contradictory, deferred, or rejected for the current phase.
+4. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
+5. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
+6. Implement the minimal slice using existing Acumatica patterns.
+7. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope.
+8. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
 
 ## Implementation Rules
 
@@ -75,6 +77,7 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 - For reports, trace `rpx -> subreport -> report table -> DAC/projection -> source tables` before changing layout.
 - Keep report layout, migration scripts, broad workflow redesign, and automated test expansion out of scope unless explicitly included.
 - Preserve existing user changes and unrelated dirty worktree state.
+- Use `acumatica-git-workflow` for staging, commit, or push only after explicit user confirmation of those operations.
 
 ## Stop Conditions
 

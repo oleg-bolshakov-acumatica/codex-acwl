@@ -1,6 +1,6 @@
 ---
 name: functional-spec-risk-analysis
-description: Use this skill when Codex must analyze an Acumatica functional specification before implementation for requirement contradictions, ambiguity, missing lifecycle rules, source-of-truth conflicts, and technical implementability against Acumatica architecture rules and best practices. Trigger on requests to review a Wiki/Jira functional spec itself, assess whether requirements are consistent or feasible, identify risky wording, challenge proposed data models, or prepare clarification questions before development or QA planning.
+description: Analyze an Acumatica Jira/Wiki functional specification before implementation for contradictions, ambiguity, lifecycle gaps, source-of-truth conflicts, and architecture feasibility. Use for spec risk review, data-model challenge, implementability assessment, or clarification questions before development or QA planning.
 ---
 
 # Functional Spec Risk Analysis

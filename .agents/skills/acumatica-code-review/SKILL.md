@@ -13,8 +13,9 @@ Review Acumatica ERP changes without modifying code. Prioritize bugs, regression
 
 Use repository-approved paths only:
 
-- Use `local-change-access` to inspect a change set via git over the local `code/` repository. Accepted inputs: a Stash PR id/URL (resolved directly through the remote's PR refs - Jira is not required to obtain the diff), a branch name, or a commit/ref range.
+- Use `local-change-access` to inspect a branch or commit/ref range via git over the local `code/` repository. A bare PR id/URL must first be mapped to a branch or range through Jira Development data.
 - Use `jira-access` when a Jira key is provided or discoverable from change-set metadata.
+- Use `acumatica-git-workflow` in read-only mode when Jira-related branches, commits, or PR context are incomplete or must be correlated.
 - Use `wiki-access` for linked `wiki.acumatica.com` requirements.
 - Use `jira-similar-search` only when explicit context is insufficient and similar issues can change the review conclusion.
 - Use `database-access` only for read-only SQL evidence that can change the conclusion.
@@ -40,19 +41,21 @@ Use `docs/acuminator` as an on-demand diagnostic reference during the Acuminator
 
 ## Baseline Rules
 
-Prefer `local-change-access` inspection when a change set is provided. Treat git diff hunks (over the resolved branch/ref range in `code/`) as the primary review source.
+Prefer `local-change-access` inspection when a change set is provided. Treat git diff hunks over the resolved branch/ref range in `code/` as the primary review source.
 
 Resolve the input to a diff based on what was given:
 
-- **Bare PR id/URL** - resolve through Stash PR refs (see `local-change-access`): fetch `refs/pull-requests/<id>/from` and `/merge`. When `/merge` exists, the diff is `merge^1...merge^2` and no Jira lookup is needed for the code. When only `/from` exists, get the target branch from the Jira Development panel or the source-branch name, then diff `<target>...from`. Derive the Jira key from PR commit subjects for intent/spec; if none is recoverable, review as **A2 Architecture-First** and state the missing intent as a limitation.
-- **Jira key** - read the issue first (`jira-access`), take the PR id or branch from its Development panel, then resolve as above.
+- **Bare PR id/URL** - read the Jira item first and map the PR to its source branch and target branch or commit range through Jira Development data. If no Jira key can be derived, ask for the branch/range rather than guessing.
+- **Jira key** - read the issue first (`jira-access`), take the branch/range and PR state from its Development data, then inspect it through `local-change-access`.
 - **Branch name or commit/ref range** - inspect directly via `local-change-access`; derive the Jira key from the branch name/commits for intent.
+
+When a Jira item does not expose complete branch/range context, use `acumatica-git-workflow` for read-only discovery. Consider material `open`, `merged`, and `declined` work and distinguish attempted changes from delivered changes.
 
 If reviewing a branch or local diff:
 
-1. Resolve the repository path first. The default path is `code`; confirm it with `git -C code rev-parse --is-inside-work-tree` (do not test for a `.git` directory - `code/` may be a worktree whose `.git` is a file).
-2. Establish the effective baseline from merge-base to `HEAD`, from `merge^1` for a `/merge` PR ref, or from the user-provided branch relationship.
-3. Do not switch branches in a dirty worktree unless the user explicitly approves.
+1. Resolve the repository path first. The default path is `code`; confirm it with `git -C code rev-parse --is-inside-work-tree` because `code/` may be a worktree.
+2. Establish the effective baseline from merge-base to `HEAD` or from the user/Jira-provided branch relationship.
+3. Prefer ref inspection without changing the checkout. Any switch or other non-read-only Git operation requires explicit user confirmation.
 
 When version-specific behavior matters, compare Jira `Found in`, database `[Version]` when used, and the inspected branch. Report branch/version mismatches as limitations.
 
@@ -100,11 +103,24 @@ Treat Acuminator diagnostics as supporting framework-rule evidence, not as a rep
 
 Do not require cleanup of unchanged legacy diagnostics unless the PR touches the affected code path, the legacy pattern directly affects the changed behavior, or CI/static analysis would fail for the PR.
 
+## Review Checklist
+
+Complete this checklist after classifying the review. Apply change-triggered items only when relevant, and use the referenced architecture document or helper skill for detailed rules instead of duplicating them here. For each applicable item, reach a supported conclusion or report a finding or material limitation; do not print a pass-by-pass checklist unless the user asks for it.
+
+- **Context and baseline**: resolve Jira/spec intent, branch/range, effective baseline, version context, and review boundaries.
+- **Functional correctness and regression**: verify requirements or root cause, relevant data paths, edge cases, regression risk, and expected behavior.
+- **Architecture compliance**: apply `docs/ARCHITECTURE_RULES.md`, relevant `docs/REFACTORINGS.md` entries, and targeted Acuminator diagnostics.
+- **DAC and schema integrity, when applicable**: verify DAC `IsKey` fields against the physical table key, DAC `PK`/`FK` declarations and FK-based BQL joins, field type/nullability alignment, and index needs introduced by changed query paths.
+- **Execution contexts, when applicable**: verify changed behavior across relevant import, export, Excel import, copy-paste, Contract-Based API, DAC-based OData, mobile, unattended, and processing or long-operation contexts.
+- **Feature and access mapping, when applicable**: verify `FeaturesSet`, `Features.xml`, `FieldClass`, screen/cache/action restrictions, server-side enforcement, and API/mobile exposure.
+- **Migration scripts, when applicable**: use `migration-script-consistency-review` for changed `WebSites/Pure/DB/MSSQL/*.sql` files and incorporate its findings and material limitations.
+- **Validation and residual risk**: inspect automated and manual validation evidence, missing important scenarios, and remaining uncertainty.
+
 ## Workflow
 
 1. Read change-set/Jira context and relevant chronological comments.
 2. Review explicit linked issues when they can affect expected behavior, branch selection, regression history, root cause, workaround, or scope.
-3. Resolve change set/branch and baseline.
+3. Resolve change set/branch and baseline. When context is incomplete, use `acumatica-git-workflow` for read-only discovery before selecting review inputs.
 4. Retrieve relevant Wiki links through `wiki-access`.
 5. Read required local docs and any optional docs that can change the conclusion.
 6. Classify the review as Small Bugfix/Change, Spec-Backed Feature, Architecture-First, Migration/Schema-Heavy, or a deliberate combination.
@@ -116,7 +132,7 @@ Do not require cleanup of unchanged legacy diagnostics unless the PR touches the
 9. For spec-backed feature PRs, build a lightweight requirement coverage map before declaring coverage complete. For small bugfix/change PRs, focus on root cause, minimality, targeted edge cases, and validation.
 10. Use parallel review tracks when applicable and safe; otherwise perform the tracks sequentially.
 11. Perform a targeted Acuminator diagnostic pass over changed Acumatica C# code, opening only exact `docs/acuminator/PX####.md` files when a matching pattern or suppression needs precise interpretation.
-12. Inspect functional correctness, architecture, refactoring/design quality, domain/database correctness, upgrade safety, reliability, performance, tests, and maintainability.
+12. Complete the Review Checklist, using its architecture references and helper-skill routing for all applicable change types.
 13. Synthesize all tracks into findings ordered by severity.
 
 ## Session Notes
@@ -151,13 +167,13 @@ Spec evidence:
 - Functional Spec > Section heading > Requirement or acceptance criterion
 > "Short quote from the source requirement."
 
-Problem:
+Issue:
 Explain the mismatch or defect.
 
 Impact:
 Explain the user, data, upgrade, or maintainability risk.
 
-Recommendation:
+Fix:
 State the concrete fix and the validation scenario.
 ~~~
 
@@ -172,17 +188,9 @@ State the concrete fix and the validation scenario.
 
 ## Output
 
-Write the final review using this structure:
+Keep the review compact without weakening finding evidence:
 
-1. **Task Understanding** - ticket/PR purpose, changed behavior, reviewed branch/PR, baseline, review mode, and business-validation confidence.
-2. **Findings** - highest severity first. For each finding: `[Sx] Title`, evidence, why it matters, recommendation, and references.
-   - Follow the Finding Evidence Format above for each non-trivial finding.
-   - Include exact source links with file and line number for every code finding.
-   - Add short code excerpts when surrounding context is needed to make the defect easy to find and verify.
-   - For functional findings, cite the exact Jira/Wiki requirement source, quote the shortest useful source fragment, and cite the decisive implementation line.
-   - For architecture findings, cite the local doc rule and the decisive implementation line.
-3. **Review Classification and Coverage** - state the classification. For spec-backed feature PRs, summarize requirement coverage and important missing/partial/unclear areas. For small bugfix/change PRs, summarize root-cause confidence, scope minimality, and validation coverage.
-4. **Two-Stage Coverage** - when Stage 1/Stage 2 review was used, summarize spec compliance separately from architecture/docs compliance. If one stage is limited, say why.
-5. **Review Limitations** - missing requirements/docs, branch/version mismatch, skipped checks that affect confidence, unclear baseline/domain behavior, or review tracks that could not be completed.
-6. **Positive Notes** - only if useful.
-7. **Final Verdict** - one of: **Needs changes**, **Looks good with minor improvements**, **Looks good**. If there are no findings, say that explicitly.
+1. **Scope** - ticket purpose, reviewed branches/ranges and PR states, baseline, classification, and business-validation confidence.
+2. **Findings** - highest severity first. Use the Finding Evidence Format for every non-trivial finding; do not repeat its requirements elsewhere.
+3. **Coverage and Limits** - for a spec-backed feature, summarize covered, missing, partial, and unclear requirements; for a small change, summarize root-cause confidence, minimality, edge cases, and validation. When two-stage review applies, separate functional coverage from architecture/docs compliance. Include only limitations that affect confidence.
+4. **Verdict** - **Needs changes**, **Looks good with minor improvements**, or **Looks good**. State explicitly when there are no findings. Add positive notes only when useful.

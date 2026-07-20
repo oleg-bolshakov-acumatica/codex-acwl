@@ -1,6 +1,6 @@
 ---
 name: system-diagnostics-analysis
-description: Use this skill for targeted Acumatica system diagnostics during Support Request analysis when version/build context, customization packages, upgrade chronology, schema discovery, or source-branch selection can materially affect root cause, workaround, or validation confidence. Uses read-only database checks through database-access and branch/schema evidence from the local source checkout when needed.
+description: Run targeted Acumatica system diagnostics when version/build, customization, upgrade chronology, schema, or source-branch context can change the cause, workaround, branch choice, or confidence. Use read-only database checks and local source/schema evidence.
 ---
 
 # System Diagnostics Analysis Skill
