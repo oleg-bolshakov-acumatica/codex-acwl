@@ -1,6 +1,6 @@
 # Acumatica Application Engineer Workspace (Light)
 
-This is a Codex workspace tailored for Acumatica ERP application engineering on the Projects/Construction team. It is the **light** variant: external context comes from the corporate `jira-internal` and `wiki-internal` MCP servers, read-only SQL through a local PowerShell facade, and git over a local product checkout. It provides workflow skills for support analysis, code review, spec verification, bugfixing, and feature development.
+This is a Codex workspace tailored for Acumatica ERP application engineering on the Projects/Construction team. It is the **light** variant: external context comes from the corporate `jira-internal` and `wiki-internal` MCP servers, optional repository-development guidance, read-only SQL through a local PowerShell facade, and git over a local product checkout. It provides workflow skills for support analysis, code review, spec verification, bugfixing, and feature development.
 
 ## Repository-Local MCP
 
@@ -11,12 +11,14 @@ The project-local MCP servers are declared in the trusted Codex project config:
 Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed workspace MCP server set for this workspace is:
 
 - `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira, Wiki, or PR tools.
+- `acumatica-development-guidance` - optional read-only repository guidance for architecture, conventions, build, testing, validation, and review.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
 
 If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths. Globally installed Codex servers may also appear in `/mcp` and are outside this workspace contract:
 
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
+- `acumatica-development-guidance` is a read-only streamable-HTTP server reached through `scripts/Start-StreamableHttpMcpProxy.ps1`. Its unavailability is not a blocker unless the missing guidance materially affects the conclusion.
 - `jira-internal` and `wiki-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
 
 Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the configured project MCP servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
@@ -34,6 +36,7 @@ Use only the designated repository skills for external context:
 - `acumatica-git-workflow` for Jira-related branch/commit discovery and approval-gated Git mutations.
 - `root-cause-origin-analysis` for establishing which prior feature/ChangeRequest/PR/commit and its Jira item introduced a defect, via read-only git archaeology (`blame`, `log -S`/`-G`, `show`) over `code/` mapped to Jira.
 - `database-access` for read-only SQL evidence through the `powershell-mcp-facade` `sql.select` tool.
+- `acumatica-development-guidance` for optional repository-specific architecture, conventions, pitfalls, build/startup, testing, validation, and review guidance.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.
 Do not request approval for read-only SQL needed for diagnosis.
@@ -80,6 +83,9 @@ Local docs are authoritative context. Mode skills decide which docs must be load
 - `docs/DATABASE_MODEL.md`
 - `docs/FEATURE_DEVELOPMENT_WORKFLOW.md`
 - `docs/FEATURE_IMPLEMENTATION_PATTERNS.md`
+- `docs/CODE_NAVIGATION.md`
+
+`docs/CODE_NAVIGATION.md` is a repository routing map -- where to look, not what the code does. Use it before broad searches to locate modules, graphs, DACs, UI, migrations, no-code configuration, and platform mechanisms. Never cite it as evidence for a finding: confirm the actual file on the inspected branch and cite that file. `docs/ARCHITECTURE_RULES.md` takes precedence for placement of new code. The map is generated from one branch and revision, so on other product branches verify that referenced projects and folders exist and report material differences.
 
 This workspace is intentionally tailored for the Projects/Construction team. PM/CN/PJ domain context is expected and should be used when relevant rather than hidden.
 
@@ -122,6 +128,7 @@ This principle governs the secondary mechanics of git, build, and write executio
 - Run `jira-similar-search` only when explicit context is insufficient and likely similar Bugs or Support Requests can change the diagnosis or conclusion.
 - Retrieve relevant Wiki links through `wiki-access`; treat footer comments, inline comments, and comment resolution state as first-class context.
 - Use `database-access` only for read-only diagnosis or verification. Use `SELECT` only. Use `COMPANYID` for tenant-partitioned tables when identified. Do not treat cross-tenant matches as confirmation.
+- Use `acumatica-development-guidance` when repository-specific architecture, conventions, pitfalls, build, testing, or review guidance can change the implementation plan, review criteria, or validation path. Treat it as guidance and report conflicts with local instructions or current code.
 - Use `system-diagnostics-analysis` only when environment, product version, branch choice, customizations, upgrade history, or schema discovery can change the conclusion, implementation plan, or validation.
 - When changed files include `WebSites/Pure/DB/MSSQL/*.sql`, use `migration-script-consistency-review`. The `MSSQL` directory name is historical; determine database applicability from script tags. Treat `ALTER`, `CREATE`, and `DROP` in migration scripts as suspicious.
 - When analyzing a bug (Support Request or bugfix), establish the root-cause origin with `root-cause-origin-analysis` - the introducing feature/ChangeRequest/PR/commit and its Jira item - before forming a fix plan whenever a defect anchor exists. It is mandatory to attempt and report the result; when the origin cannot be established, state that explicitly with the reason. Inability to establish origin does not by itself block a fix or the analysis.
@@ -151,6 +158,7 @@ Before finalizing:
 - correct high-level mode skill selected;
 - Jira/branch/range/repository/spec context resolved or limitation stated;
 - required low-level skills used for Jira, Wiki, local change set, Git workflow, SQL, migration scripts, and similarity search when those sources or operations are used;
+- repository development guidance was consulted when it could materially improve implementation, review, or validation, and any conflict with higher-priority local evidence was reported;
 - explicit links considered before similarity search;
 - changed migration scripts reviewed with `migration-script-consistency-review`, or absence stated when relevant to review/verification;
 - facts and hypotheses separated;

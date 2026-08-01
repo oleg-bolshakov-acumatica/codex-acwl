@@ -6,6 +6,21 @@ startup_timeout_sec = 20
 tool_timeout_sec = 60
 enabled_tools = ["sql.select", "server.describe_capabilities"]
 
+[mcp_servers.acumatica-development-guidance]
+command = "powershell"
+args = [
+  "-NoProfile",
+  "-ExecutionPolicy",
+  "Bypass",
+  "-File",
+  "scripts/Start-StreamableHttpMcpProxy.ps1",
+  "-Url",
+  "https://dokploy.acumatica.com/ai-kb/mcp",
+]
+cwd = "."
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+
 [mcp_servers.jira-internal]
 url = "https://jmcp.acumatica.com/mcp"
 tool_timeout_sec = 60

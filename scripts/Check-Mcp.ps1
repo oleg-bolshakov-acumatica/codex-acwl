@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $configPath = Join-Path $projectRoot ".codex/config.toml"
-$expectedServers = @("jira-internal", "powershell-mcp-facade", "wiki-internal")
+$expectedServers = @("acumatica-development-guidance", "jira-internal", "powershell-mcp-facade", "wiki-internal")
 $expectedFacadeTools = @("sql.select", "server.describe_capabilities")
 $expectedDbProxyBackendVersion = "db-proxy-0.1.0"
 
@@ -40,7 +40,7 @@ function Get-TomlStringArrayValue {
         [Parameter(Mandatory)] [string]$Key
     )
 
-    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*\[(.*?)\]\s*$'
+    $pattern = '(?ms)^[ \t]*' + [regex]::Escape($Key) + '[ \t]*=[ \t]*\[(.*?)\]'
     if ($Block -notmatch $pattern) {
         return @()
     }
@@ -52,7 +52,7 @@ function Get-McpServerBlocks {
     param([Parameter(Mandatory)] [string]$Toml)
 
     $blocks = @{}
-    $pattern = '(?ms)^\[mcp_servers\.([^\]]+)\]\s*\r?\n(.*?)(?=^\[|\z)'
+    $pattern = '(?ms)^\[mcp_servers\.([^.\]]+)\]\s*\r?\n(.*?)(?=^\[|\z)'
     foreach ($match in [regex]::Matches($Toml, $pattern)) {
         $blocks[[string]$match.Groups[1].Value] = [string]$match.Groups[2].Value
     }
@@ -109,6 +109,39 @@ function Invoke-StdioSmokeTest {
     }
 
     throw "tools/list did not return a tool catalog."
+}
+
+function Test-ServerConfig {
+    param(
+        [Parameter(Mandatory)] [string]$Name,
+        [Parameter(Mandatory)] [string]$Block,
+        [string]$ExpectedCommand,
+        [string]$ExpectedCwd,
+        [string[]]$RequiredArgs = @()
+    )
+
+    $errors = @()
+    if ((Get-TomlStringValue -Block $Block -Key "command") -ne $ExpectedCommand) {
+        $errors += ("command must be {0}" -f $ExpectedCommand)
+    }
+    if ((Get-TomlStringValue -Block $Block -Key "cwd") -ne $ExpectedCwd) {
+        $errors += ("cwd must be {0}" -f $ExpectedCwd)
+    }
+
+    $args = @(Get-TomlStringArrayValue -Block $Block -Key "args")
+    foreach ($requiredArg in $RequiredArgs) {
+        if ($requiredArg -notin $args) {
+            $errors += ("args must include {0}" -f $requiredArg)
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        Write-Host ("[mcp  ] {0,-30} -> FAILED: {1}." -f $Name, ($errors -join "; "))
+        return $false
+    }
+
+    Write-Host ("[mcp  ] {0,-30} -> config OK." -f $Name)
+    return $true
 }
 
 $failures = 0
@@ -201,6 +234,16 @@ if ($blocks.ContainsKey("jira-internal")) {
         $failures++
         Write-Host ("[http ] jira-internal        -> FAILED: expected https://jmcp.acumatica.com/mcp, got {0}" -f $url)
     }
+}
+
+if ($blocks.ContainsKey("acumatica-development-guidance")) {
+    $ok = Test-ServerConfig `
+        -Name "acumatica-development-guidance" `
+        -Block ([string]$blocks["acumatica-development-guidance"]) `
+        -ExpectedCommand "powershell" `
+        -ExpectedCwd "." `
+        -RequiredArgs @("scripts/Start-StreamableHttpMcpProxy.ps1", "https://dokploy.acumatica.com/ai-kb/mcp")
+    if (-not $ok) { $failures++ }
 }
 
 if ($blocks.ContainsKey("wiki-internal")) {

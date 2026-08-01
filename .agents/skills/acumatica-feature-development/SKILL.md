@@ -20,6 +20,7 @@ Use repository-approved paths only:
 - Use `database-access` only for read-only diagnostics that can change interpretation, implementation risk, branch choice, or validation.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect implementation or validation.
 - Use `jira-similar-search` only when explicit context is insufficient and prior issues can change the plan.
+- Use `acumatica-development-guidance` for applicable repository architecture, conventions, pitfalls, build/startup, testing, and validation guidance after the task and local context are resolved.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
 
@@ -33,13 +34,15 @@ Read and follow:
 
 Read `docs/FEATURE_IMPLEMENTATION_PATTERNS.md` when the iteration includes business logic, posting/recalculation paths, reports, projections, currency/base amounts, UI computed values, or customization-sensitive placement.
 
+Use `docs/CODE_NAVIGATION.md` to locate existing code the feature must touch and enumerate paths needing parity: entry/defaulting, validation, persist, release/posting, recalculation, inquiry/report/projection, workflow, API/GI, migration, and tests. Keep `docs/ARCHITECTURE_RULES.md` authoritative for placement of new files, and confirm map paths on the feature branch.
+
 Read domain, database, and source references only when they can change interpretation, design, branch choice, or validation.
 
 If a required workflow doc is missing, continue with this skill and report the limitation.
 
 ## Specification Source
 
-The functional specification is the primary source of requirements. When Jira links to a Wiki functional specification, retrieve the Wiki page and treat it as authoritative. Jira context, PRs, comments, related issues, local docs, existing code, tests, and read-only diagnostics are supporting evidence.
+The functional specification is the primary source of requirements. When Jira links to a Wiki functional specification, retrieve the Wiki page and treat it as authoritative. Jira context, PRs, comments, related issues, local docs, repository development guidance, existing code, tests, and read-only diagnostics are supporting evidence.
 
 Do not implement ambiguous, contradictory, obsolete, or explicitly deferred requirements without user confirmation.
 
@@ -62,11 +65,12 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 1. Refresh Jira, Wiki specification, comments, local docs, branch/PR context, and existing session notes when needed.
 2. Use `acumatica-git-workflow` to discover or verify the task branch. Before editing, resume or prepare a `feature` branch; a new branch must use a freshly fetched stable ref, and every Git mutation requires explicit user confirmation.
 3. Inventory and classify requirements as ready, ambiguous, contradictory, deferred, or rejected for the current phase.
-4. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
-5. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
-6. Implement the minimal slice using existing Acumatica patterns.
-7. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope.
-8. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
+4. Use `acumatica-development-guidance` to retrieve only the architecture, conventions, pitfalls, build, startup, testing, or validation articles relevant to the selected repository and slice. Read exact article resources, compare them with local docs and current code, and record material conflicts.
+5. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
+6. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
+7. Implement the minimal slice using existing Acumatica patterns.
+8. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope. Use applicable development guidance to select the narrowest reliable validation, but keep local build files and current-branch behavior authoritative.
+9. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
 
 ## Implementation Rules
 

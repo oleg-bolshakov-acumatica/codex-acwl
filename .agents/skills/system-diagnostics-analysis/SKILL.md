@@ -197,7 +197,7 @@ WHERE t.name = '<TableName>'
 ORDER BY c.column_id;
 ```
 
-For full version-specific schema references during source analysis, use `source-code-analysis` and inspect `DatabaseModel` / `Pure/DatabaseModel` on the derived branch. Do not use schema information from an unrelated branch without reporting the branch mismatch. Treat source `DatabaseModel` as schema reference, not as proof of runtime data state in the customer backup.
+For full version-specific schema references during source analysis, use `source-code-analysis` and inspect `DatabaseModel/Application/<Module>/<Table>.sql` and `DatabaseModel/System/` on the derived branch (see `docs/CODE_NAVIGATION.md`). Do not use schema information from an unrelated branch without reporting the branch mismatch. Treat source `DatabaseModel` as schema reference, not as proof of runtime data state in the customer backup.
 
 ## Output Guidance
 

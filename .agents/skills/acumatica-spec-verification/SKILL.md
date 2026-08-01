@@ -18,6 +18,7 @@ Use repository-approved paths only:
 - Use `local-change-access` for implementation evidence in a specific change set, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
 - Use `database-access` only when read-only SQL evidence can change requirement interpretation or verification risk.
+- Use `acumatica-development-guidance` for repository-specific architecture, conventions, testing, validation, and review guidance that can improve coverage or risk assessment.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
 
@@ -38,6 +39,8 @@ Read and apply:
 
 Read domain, database, diagnostics, or source files outside the git diff hunks only when they affect requirement interpretation or implementation risk.
 
+Use `docs/CODE_NAVIGATION.md` when coverage verification needs paths outside the diff hunks: it maps where affected-module data paths live -- entry, release/posting, inquiry/report, API/GI, workflow, migration, and tests. Verify these paths on the reviewed branch.
+
 ## Verification Scope Classification
 
 Classify the verification before deep inspection and size the coverage effort accordingly:
@@ -54,7 +57,7 @@ Keep functional requirement coverage separate from architecture/docs compliance 
 3. Extract normative requirements, scenarios, constraints, UI/data/process rules, edge cases, and acceptance criteria. Distinguish requirements from examples, discussion, obsolete comments, and resolved comments.
 4. Resolve change set/branch and baseline. Treat git diff hunks (over the resolved branch/ref range in `code/`) as primary implementation evidence; use local files only when hunks are insufficient.
 5. Check whether migration scripts changed. If yes, use `migration-script-consistency-review`; if no, record that no migration scripts were changed.
-6. Read required local docs and optional docs only when useful.
+6. Read required local docs and optional docs only when useful. Use `acumatica-development-guidance` for exact repository articles relevant to the affected architecture, conventions, testing, review, or validation paths; do not treat guidance as specification evidence.
 7. Build a requirement-by-requirement coverage matrix.
 8. For implemented requirements, verify correctness, not just presence of code. Check edge cases, data flow, persistence, UI behavior, permissions/workflow impact, migration-script upgrade safety, tests, API/GI/inquiry/report surfaces, and regression risk to the degree supported by evidence.
 9. For a full feature spec, use parallel verification tracks when they improve coverage; otherwise verify sequentially.

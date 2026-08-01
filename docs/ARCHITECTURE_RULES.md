@@ -748,8 +748,10 @@ protected virtual void _(Events.RowPersisting<SOOrder> e)
 
 Acumatica follows a module-based organization where each functional area (AP, AR, CR, GL, PM, SO, etc.) has its own folder structure. Understanding this structure is critical for proper file placement.
 
+Paths in this section are written relative to the application source root `WebSites/Pure/` of the product repository, so the full repository-relative path of a module folder is `WebSites/Pure/PX.Objects/{Module}/`. See `docs/CODE_NAVIGATION.md` for the repository-wide layout, satellite projects, and where existing code lives; this section remains authoritative for where **new** code belongs.
+
 ```
-PX.Objects/
+WebSites/Pure/PX.Objects/
 `-- {Module}/                    # Module root (AP, AR, CR, GL, PM, SO, etc.)
     |-- {Module}MainGraph.cs     # Primary graphs (e.g., APInvoiceEntry.cs)
     |-- {Module}MainGraph_Workflow.cs  # Workflow configurations

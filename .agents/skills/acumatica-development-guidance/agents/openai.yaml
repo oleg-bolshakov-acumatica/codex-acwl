@@ -1,0 +1,15 @@
+interface:
+  display_name: "Acumatica Development Guidance"
+  short_description: "Find Acumatica repository development guidance"
+  default_prompt: "Use $acumatica-development-guidance to find repository-specific architecture, conventions, testing, review, and validation guidance for this Acumatica task."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "acumatica-development-guidance"
+      description: "Read-only Acumatica repository development guidance"
+      transport: "streamable_http"
+      url: "https://dokploy.acumatica.com/ai-kb/mcp"
+
+policy:
+  allow_implicit_invocation: true

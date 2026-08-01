@@ -21,6 +21,7 @@ Use repository-approved paths only:
 - Use `database-access` only for read-only SQL evidence that can change the conclusion.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect review confidence.
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
+- Use `acumatica-development-guidance` for repository-specific architecture, conventions, pitfalls, testing, validation, and review guidance relevant to the classified change shape and changed subsystems.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
 
@@ -36,6 +37,7 @@ Read these only when they can affect the review:
 - `docs/BUSINESS_MODEL.md`
 - `docs/DATABASE_MODEL.md`
 - source files outside the git diff hunks
+- `docs/CODE_NAVIGATION.md` to locate related code outside the diff hunks, distinguish application from platform code, and identify paths a change should have covered
 
 Use `docs/acuminator` as an on-demand diagnostic reference during the Acuminator diagnostic pass. Do not bulk-load the directory. Open only the exact `PX####.md` files that match suspicious changed-code patterns, and open `docs/acuminator/DiagnosticSuppression.md` only when reviewing or proposing Acuminator suppressions.
 
@@ -122,7 +124,7 @@ Complete this checklist after classifying the review. Apply change-triggered ite
 2. Review explicit linked issues when they can affect expected behavior, branch selection, regression history, root cause, workaround, or scope.
 3. Resolve change set/branch and baseline. When context is incomplete, use `acumatica-git-workflow` for read-only discovery before selecting review inputs.
 4. Retrieve relevant Wiki links through `wiki-access`.
-5. Read required local docs and any optional docs that can change the conclusion.
+5. Read required local docs and any optional docs that can change the conclusion. Use `acumatica-development-guidance` for exact repository articles relevant to the review classification, changed subsystems, and validation evidence; local docs and current code remain authoritative.
 6. Classify the review as Small Bugfix/Change, Spec-Backed Feature, Architecture-First, Migration/Schema-Heavy, or a deliberate combination.
 7. Check whether migration or schema files changed. If `WebSites/Pure/DB/MSSQL/*.sql` changed, use `migration-script-consistency-review`; if `DatabaseModel/Application/**/*.sql` changed, manually verify DAC/schema consistency and upgrade risk against the local docs. If no migration or schema files changed, record that.
 8. When a Jira/Wiki spec is available or the user asks for requirement verification, perform a two-stage review:

@@ -21,6 +21,7 @@ Use repository-approved paths only:
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect diagnosis, branch choice, or validation.
 - Use `local-change-access` when a related change set exists and its diff matters, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
 - Use `root-cause-origin-analysis` to establish which prior feature/ChangeRequest/PR/commit (and its Jira item) introduced the defect, before proposing the fix.
+- Use `acumatica-development-guidance` for applicable repository architecture, conventions, pitfalls, build/startup, testing, and validation guidance once the defect scope and repository are known.
 
 Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
 
@@ -35,6 +36,8 @@ Read these only when they can affect branch choice, diagnosis, implementation ri
 
 - `docs/BUSINESS_MODEL.md`
 - `docs/DATABASE_MODEL.md`
+
+Use `docs/CODE_NAVIGATION.md` to locate the defect's module, layer, and likely files before searching, and to distinguish application from platform code. Confirm the paths on the fix branch; the map is generated from one revision.
 
 ## Repository and Branch Rules
 
@@ -52,13 +55,14 @@ When version-specific behavior matters:
 1. Read the bug report, Jira context, relevant chronological comments, explicit linked issues, and similar issues only when needed.
 2. Resolve repository, branch/PR, baseline, and version context with `acumatica-git-workflow`; obtain explicit confirmation before any required Git mutation.
 3. Retrieve relevant Wiki links and read required local docs.
-4. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
-5. Diagnose root cause from Jira, Wiki, docs, code, tests, and optional SQL evidence.
-6. Establish root-cause origin via `root-cause-origin-analysis` before the fix plan: identify the introducing feature/ChangeRequest/PR/commit and its Jira item with a concrete `path:line@commit` link. This is mandatory to attempt and mandatory to report; if the origin cannot be established, state that explicitly with the reason (see the skill's "Not established" / "Not applicable" outcomes). Inability to establish origin does not block the fix.
-7. Confirm the fix remains small, clear, and safely validatable.
-8. Implement the minimal change.
-9. Run focused validation.
-10. Report root cause, root-cause origin (or why it is not established), fix, validation, and limitations.
+4. Use `acumatica-development-guidance` for relevant architecture, conventions, pitfalls, build, startup, testing, or validation guidance. Read exact articles and compare them with local instructions and current-branch code before applying them.
+5. Use read-only SQL or diagnostics only when they can confirm/refute a hypothesis or affect branch choice, root cause, or risk.
+6. Diagnose root cause from Jira, Wiki, docs, repository development guidance, code, tests, and optional SQL evidence.
+7. Establish root-cause origin via `root-cause-origin-analysis` before the fix plan: identify the introducing feature/ChangeRequest/PR/commit and its Jira item with a concrete `path:line@commit` link. This is mandatory to attempt and mandatory to report; if the origin cannot be established, state that explicitly with the reason (see the skill's "Not established" / "Not applicable" outcomes). Inability to establish origin does not block the fix.
+8. Confirm the fix remains small, clear, and safely validatable.
+9. Implement the minimal change.
+10. Run focused validation.
+11. Report root cause, root-cause origin (or why it is not established), fix, validation, and limitations.
 
 For customer-backup or data-dependent bugs, capture database/server/backup/tenant/`COMPANYID` when present. Use tenant-scoped SQL for tenant-partitioned tables and do not treat cross-tenant matches as confirmation.
 
