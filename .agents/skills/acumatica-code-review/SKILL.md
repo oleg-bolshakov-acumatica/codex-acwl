@@ -13,8 +13,9 @@ Review Acumatica ERP changes without modifying code. Prioritize bugs, regression
 
 Use repository-approved paths only:
 
-- Use `local-change-access` to inspect a branch or commit/ref range via git over the local `code/` repository. A bare PR id/URL must first be mapped to a branch or range through Jira Development data.
-- Use `jira-access` when a Jira key is provided or discoverable from change-set metadata.
+- Use `bitbucket-pr-access` for a specific Bitbucket/Stash pull request.
+- Use `local-change-access` to inspect a branch or commit/ref range via git over the local `code/` repository.
+- Use `jira-access` when a Jira key is provided or discoverable from PR or change-set metadata.
 - Use `acumatica-git-workflow` in read-only mode when Jira-related branches, commits, or PR context are incomplete or must be correlated.
 - Use `wiki-access` for linked `wiki.acumatica.com` requirements.
 - Use `jira-similar-search` only when explicit context is insufficient and similar issues can change the review conclusion.
@@ -23,7 +24,7 @@ Use repository-approved paths only:
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
 - Use `acumatica-development-guidance` for repository-specific architecture, conventions, pitfalls, testing, validation, and review guidance relevant to the classified change shape and changed subsystems.
 
-Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
+Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, Bitbucket, source changes, or SQL when the approved path is available.
 
 ## Required Local Context
 
@@ -43,12 +44,13 @@ Use `docs/acuminator` as an on-demand diagnostic reference during the Acuminator
 
 ## Baseline Rules
 
-Prefer `local-change-access` inspection when a change set is provided. Treat git diff hunks over the resolved branch/ref range in `code/` as the primary review source.
+Prefer `bitbucket-pr-access` inspection when a pull request is provided. Treat returned PR file changes and per-file hunks as the primary review source. For a branch or commit/ref range, use `local-change-access` and treat the resolved Git diff hunks as primary evidence.
 
 Resolve the input to a diff based on what was given:
 
-- **Bare PR id/URL** - read the Jira item first and map the PR to its source branch and target branch or commit range through Jira Development data. If no Jira key can be derived, ask for the branch/range rather than guessing.
-- **Jira key** - read the issue first (`jira-access`), take the branch/range and PR state from its Development data, then inspect it through `local-change-access`.
+- **PR URL or coordinates** - inspect directly through `bitbucket-pr-access`; derive linked Jira context from PR metadata when available.
+- **Numeric PR id without repository coordinates** - resolve it from a related Jira item or ask for its URL; do not guess the repository.
+- **Jira key** - read the issue first (`jira-access`), use its Development data to resolve material PRs, branches, and commits, then inspect a specific PR through `bitbucket-pr-access` or a branch/range through `local-change-access`.
 - **Branch name or commit/ref range** - inspect directly via `local-change-access`; derive the Jira key from the branch name/commits for intent.
 
 When a Jira item does not expose complete branch/range context, use `acumatica-git-workflow` for read-only discovery. Consider material `open`, `merged`, and `declined` work and distinguish attempted changes from delivered changes.

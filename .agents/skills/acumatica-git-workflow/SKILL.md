@@ -46,7 +46,7 @@ Start with read-only checks:
 1. Inspect worktree status, current branch or detached state, remotes, worktrees, and relevant local/remote-tracking refs.
 2. Search refs and commit subjects for the Jira key.
 3. Use `jira-access` to retrieve Jira Development data, including branches, commits, PR identifiers, target branches, and states when available.
-4. Map a bare PR id/URL to its branch or commit range through Jira Development data before code inspection. Do not derive a PR diff from provider-specific PR refs.
+4. Use `bitbucket-pr-access` for each specific material PR identified by Jira or Git evidence. Resolve a numeric PR ID without repository coordinates through a PR URL or Jira Development data; do not guess the repository.
 5. Use `local-change-access` for each selected branch, commit, or ref range. If required refs are absent locally, propose the exact targeted fetch and obtain confirmation before running it.
 6. When current remote branch discovery matters, use `git ls-remote --heads <remote> "*<JIRA-KEY>*"`; it does not update local refs.
 

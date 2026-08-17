@@ -1,6 +1,6 @@
 ---
 name: local-change-access
-description: Use this skill when you need the changed-file list, target branch, change state, and per-file diff hunks for a set of changes, using git over the local code/ repository. This replaces remote PR access in the light workspace; a bare PR id/URL must first be mapped to a branch or commit range through Jira Development data.
+description: Use this skill when you need the changed-file list, target branch, change state, and per-file diff hunks for a branch or commit/ref range using git over the local code/ repository. Use bitbucket-pr-access instead for direct pull-request inspection.
 ---
 
 # Local Change Access Skill
@@ -17,7 +17,7 @@ Resolve the change to one of these git-addressable forms:
 - a commit range or two refs;
 - a single commit id.
 
-When the user supplies only a PR id/URL, use `jira-access` first and map it through Jira Development data to the source branch and target branch or commit range. Do not resolve a bare PR through provider-specific PR refs. If Jira Development data cannot establish the branch/range, ask the user for it before inspecting code.
+When the user supplies a PR URL or coordinates, use `bitbucket-pr-access` first. If local Git inspection is still needed, obtain its source and target refs from PR metadata or Jira Development data; do not derive a range from provider-specific PR refs. A numeric PR ID without repository coordinates must be resolved from a URL or Jira Development data before remote inspection.
 
 ## Resolve the Repository
 
@@ -27,7 +27,7 @@ Git topology is user-specific. Establish the effective repository/worktree layou
 
 ## Workflow
 
-1. Resolve the repository and change-set refs. For a PR id/URL, retrieve Jira Development data first.
+1. Resolve the repository and change-set refs. For a PR input, inspect the PR first and use its source/target refs only when local Git evidence is necessary.
 2. Inspect status, current branch, worktrees, remotes, and available refs without changing state.
 3. If required refs are absent locally, use `git ls-remote` for discovery. Route any proposed `fetch` through `acumatica-git-workflow` and obtain explicit confirmation before updating refs.
 4. Establish the baseline with the Jira target branch, explicit user baseline, or `git merge-base <base> <head>`.

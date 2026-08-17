@@ -18,7 +18,8 @@ Use these low-level skills as needed:
 - `jira-access` for explicit Jira issue reads;
 - `jira-similar-search` for heuristic Bug/SupportRequest similarity search;
 - `wiki-access` for relevant `wiki.acumatica.com` links found in issues, comments, or change-set context;
-- `local-change-access` to inspect a change set via git over the local `code/` repository when Jira development data or comments expose a PR/branch/commit reference. Map a PR to a branch via Jira Development data, then inspect that branch with read-only git.
+- `bitbucket-pr-access` for a specific pull request when Jira Development data or comments expose a PR reference;
+- `local-change-access` to inspect a branch or commit/ref range via git over the local `code/` repository.
 
 `jira-access` and `jira-similar-search` read Jira through the corporate `jira-internal` MCP server, and `wiki-access` reads Wiki through the corporate `wiki-internal` MCP server. These internal servers are the primary path for Jira/Wiki access, including capabilities such as direct JQL search, Confluence search, page tree, history/diff, labels, attachments, images, downloads, and view statistics.
 
@@ -104,7 +105,7 @@ Open relevant Wiki links through `wiki-access` when they may clarify:
 - implementation constraints;
 - unresolved inline/footer comments.
 
-Use `local-change-access` when Jira development data, related issues, or comments expose a specific PR/branch and the change set can affect root cause, fix confirmation, or workaround. Map the PR to a branch via Jira Development data, then inspect that branch with read-only git over the local `code/` repository.
+Use `bitbucket-pr-access` when Jira Development data, related issues, or comments expose a specific pull request and its state, changed files, commits, or discussion can affect root cause, fix confirmation, or workaround. Use `local-change-access` for a branch or commit/ref range when source outside the PR diff or local history is needed.
 
 Treat the change set as evidence of what was changed, not as proof that the current customer's data followed that path unless current-case evidence supports it.
 

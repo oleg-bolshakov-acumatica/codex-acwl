@@ -16,13 +16,13 @@ Use repository-approved paths only:
 - Use `jira-access` for Jira requirements, acceptance criteria, comments, linked issues, and development metadata.
 - Use `acumatica-git-workflow` to discover Jira-related branches/PRs and to prepare or resume the `feature` branch.
 - Use `wiki-access` for linked `wiki.acumatica.com` functional specifications, including comments and resolution state.
-- Use `local-change-access` when an existing change set must be inspected, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
+- Use `bitbucket-pr-access` when an existing pull request must be inspected. Use `local-change-access` for an existing branch or commit/ref range via git over the local `code/` repository.
 - Use `database-access` only for read-only diagnostics that can change interpretation, implementation risk, branch choice, or validation.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect implementation or validation.
 - Use `jira-similar-search` only when explicit context is insufficient and prior issues can change the plan.
 - Use `acumatica-development-guidance` for applicable repository architecture, conventions, pitfalls, build/startup, testing, and validation guidance after the task and local context are resolved.
 
-Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
+Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, Bitbucket, source changes, or SQL when the approved path is available.
 
 ## Required Local Context
 

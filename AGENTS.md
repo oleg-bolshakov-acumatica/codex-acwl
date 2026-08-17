@@ -14,12 +14,13 @@ Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local 
 - `acumatica-development-guidance` - optional read-only repository guidance for architecture, conventions, build, testing, validation, and review.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
+- `bitbucket-internal` - internal read-only Bitbucket HTTP MCP server for pull-request metadata, diffs, discussions, commits, and delivery evidence.
 
 If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths. Globally installed Codex servers may also appear in `/mcp` and are outside this workspace contract:
 
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
 - `acumatica-development-guidance` is a read-only streamable-HTTP server reached through `scripts/Start-StreamableHttpMcpProxy.ps1`. Its unavailability is not a blocker unless the missing guidance materially affects the conclusion.
-- `jira-internal` and `wiki-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
+- `jira-internal`, `wiki-internal`, and `bitbucket-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
 
 Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the configured project MCP servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
 
@@ -32,6 +33,7 @@ Use only the designated repository skills for external context:
 - `jira-access` for Jira issue reads through `jira-internal`.
 - `jira-similar-search` for likely similar Bugs or Support Requests (agent-driven JQL through `jira-internal`, ranked locally).
 - `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal`, including footer and inline comments.
+- `bitbucket-pr-access` for one specific Bitbucket/Stash pull request through `bitbucket-internal`.
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
 - `acumatica-git-workflow` for Jira-related branch/commit discovery and approval-gated Git mutations.
 - `root-cause-origin-analysis` for establishing which prior feature/ChangeRequest/PR/commit and its Jira item introduced a defect, via read-only git archaeology (`blame`, `log -S`/`-G`, `show`) over `code/` mapped to Jira.
@@ -40,17 +42,15 @@ Use only the designated repository skills for external context:
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.
 Do not request approval for read-only SQL needed for diagnosis.
-Do not perform Jira, Wiki, or database actions beyond the read-only actions described by the corresponding skills. Local source/Git changes are allowed only within the write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`, `acumatica-bug-backport`) and follow their approval rules.
-
-There is no remote PR service or memory service in this workspace. A pull request is inspected as a git branch or commit range in `code/`; map a PR id/URL to a branch using Jira Development data first.
+Do not perform Jira, Wiki, Bitbucket, or database actions beyond the read-only actions described by the corresponding skills. Local source/Git changes are allowed only within the write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`, `acumatica-bug-backport`) and follow their approval rules.
 
 ## Mode Router
 
 Use high-level workflow skills for task-specific context. Load only the relevant mode skill:
 
 - `acumatica-support-request-analysis` - Support Request analysis for the Projects/Construction team: Jira title/description/comments, related items, read-only SQL diagnostics, source-code analysis, root cause, workaround, iteration gate, and Jira comment draft.
-- `acumatica-code-review` - read-only review of a branch, change set, or diff against Jira intent, architecture, domain, migration, database, test, and maintainability risk.
-- `acumatica-spec-verification` - read-only verification that an implementation covers a functional specification from Jira and/or Wiki before QA.
+- `acumatica-code-review` - read-only review of a pull request, branch, or diff against Jira intent, architecture, domain, migration, database, test, and maintainability risk.
+- `acumatica-spec-verification` - read-only verification that a pull request or implementation covers a functional specification from Jira and/or Wiki before QA.
 - `acumatica-small-bugfix` - minimal low-risk correction for a narrow defect when expected behavior, base branch, and validation are sufficiently clear.
 - `acumatica-bug-backport` - approval-gated creation of a local Service Pack or Patch backport branch and commit from an existing source fix and existing backport Bug; stops before push, pull request, Jira workflow changes, or cascade merge.
 - `acumatica-feature-development` - iterative feature implementation from a Jira item and functional specification, with scope ledger and requirement coverage.
@@ -60,9 +60,9 @@ If the user's task does not fit one of these modes, perform the maximum safe ana
 
 ## Inputs
 
-Accepted inputs include Jira ticket ID, Support Request ID, functional specification source or Wiki URL, branch name, commit/ref range, bug description, failing test name, exception message, stack trace, database backup/environment details, or Acumatica screen/table/API references.
+Accepted inputs include Jira ticket ID, Support Request ID, functional specification source or Wiki URL, branch name, commit/ref range, pull request URL or coordinates, bug description, failing test name, exception message, stack trace, database backup/environment details, or Acumatica screen/table/API references.
 
-When Jira context is available, use it. For code review, a specific branch or commit range in `code/` is sufficient input; derive the linked Jira item from branch naming or commit messages when available instead of asking the user. A bare PR id/URL is not directly resolvable here - map it to a branch via Jira Development data.
+When Jira context is available, use it. For code review, a specific pull request, branch, or commit range is sufficient input; derive the linked Jira item from PR metadata, branch naming, or commit messages when available instead of asking the user. Resolve a PR through `bitbucket-pr-access`; a numeric PR ID without repository coordinates must be resolved from a URL or Jira Development data first.
 For specification verification and feature development, a functional specification is required. Use Jira requirements when they are complete enough; otherwise use a linked/provided Wiki specification or ask the user for the specification source.
 
 ## Repository and Local Sources
@@ -101,7 +101,7 @@ Mention missing relevant docs in the final result and continue with available so
 - Never discard user changes or silently clean the working tree.
 - Never switch branches blindly in a dirty working tree.
 - Never run a non-read-only Git operation without explicit user confirmation for that operation or a clearly enumerated bounded batch.
-- Prefer git branch/range inspection in `code/` when a local checkout is unnecessary for deeper work.
+- Prefer direct pull-request inspection when a PR is provided. Use git branch/range inspection in `code/` when local history, source verification outside the diff, or a branch/range is required.
 - Never execute state-changing SQL or administrative database operations.
 - If requirements, branch/range, baseline, repository path, or validation path cannot be identified confidently, stop and report the missing prerequisite.
 - If the task exceeds the selected mode's safe scope, stop and explain why.
@@ -121,7 +121,7 @@ This principle governs the secondary mechanics of git, build, and write executio
 
 ## Shared Review and Diagnosis Rules
 
-- For change-set reviews, classify the review shape before deep inspection: small bugfix/change, spec-backed feature, architecture-first, migration/schema-heavy, or a deliberate combination.
+- For pull-request or change-set reviews, classify the review shape before deep inspection: small bugfix/change, spec-backed feature, architecture-first, migration/schema-heavy, or a deliberate combination.
 - For spec-backed feature changes, keep functional requirement coverage separate from architecture/docs compliance. Use a coverage-oriented pass across relevant Acumatica data paths instead of reviewing only the changed lines.
 - For small bugfix/change reviews, keep the review focused on root cause, fix minimality, targeted edge cases, regression risk, and validation unless the evidence shows broader feature scope.
 - Review explicit Jira linked issues and issue keys from descriptions/comments before heuristic similarity search when they can affect expected behavior, branch selection, regression history, root cause, workaround, or fix scope.
@@ -156,8 +156,8 @@ Session notes are grouped by Jira item under `.session-notes/<JiraItemId>/` with
 Before finalizing:
 
 - correct high-level mode skill selected;
-- Jira/branch/range/repository/spec context resolved or limitation stated;
-- required low-level skills used for Jira, Wiki, local change set, Git workflow, SQL, migration scripts, and similarity search when those sources or operations are used;
+- Jira/PR/branch/range/repository/spec context resolved or limitation stated;
+- required low-level skills used for Jira, Wiki, Bitbucket, local change set, Git workflow, SQL, migration scripts, and similarity search when those sources or operations are used;
 - repository development guidance was consulted when it could materially improve implementation, review, or validation, and any conflict with higher-priority local evidence was reported;
 - explicit links considered before similarity search;
 - changed migration scripts reviewed with `migration-script-consistency-review`, or absence stated when relevant to review/verification;

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bitbucket PR Access"
+  short_description: "Read-only Bitbucket pull-request evidence"
+  default_prompt: "Use $bitbucket-pr-access to inspect this Bitbucket pull request."

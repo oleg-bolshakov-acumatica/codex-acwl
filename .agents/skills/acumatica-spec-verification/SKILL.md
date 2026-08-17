@@ -15,12 +15,12 @@ Use repository-approved paths only:
 
 - Use `jira-access` for Jira requirements, acceptance criteria, comments, and development metadata.
 - Use `wiki-access` for linked `wiki.acumatica.com` functional specifications, including footer comments, inline comments, resolved comments, and resolution state.
-- Use `local-change-access` for implementation evidence in a specific change set, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
+- Use `bitbucket-pr-access` for implementation evidence in a specific pull request. Use `local-change-access` for a branch or commit/ref range via git over the local `code/` repository.
 - Use `migration-script-consistency-review` when changed files include `WebSites/Pure/DB/MSSQL/*.sql`.
 - Use `database-access` only when read-only SQL evidence can change requirement interpretation or verification risk.
 - Use `acumatica-development-guidance` for repository-specific architecture, conventions, testing, validation, and review guidance that can improve coverage or risk assessment.
 
-Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
+Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, Bitbucket, source changes, or SQL when the approved path is available.
 
 ## Specification Source
 
@@ -55,7 +55,7 @@ Keep functional requirement coverage separate from architecture/docs compliance 
 1. Read Jira and PR context; derive missing Jira/PR references from development metadata when available.
 2. Identify the specification source. Use Jira requirements when sufficient; otherwise locate and retrieve a Wiki spec.
 3. Extract normative requirements, scenarios, constraints, UI/data/process rules, edge cases, and acceptance criteria. Distinguish requirements from examples, discussion, obsolete comments, and resolved comments.
-4. Resolve change set/branch and baseline. Treat git diff hunks (over the resolved branch/ref range in `code/`) as primary implementation evidence; use local files only when hunks are insufficient.
+4. Resolve PR/change set/branch and baseline. Treat PR file changes and per-file hunks as primary implementation evidence for a pull request; treat Git diff hunks as primary evidence for a branch/range. Use local files only when hunks are insufficient.
 5. Check whether migration scripts changed. If yes, use `migration-script-consistency-review`; if no, record that no migration scripts were changed.
 6. Read required local docs and optional docs only when useful. Use `acumatica-development-guidance` for exact repository articles relevant to the affected architecture, conventions, testing, review, or validation paths; do not treat guidance as specification evidence.
 7. Build a requirement-by-requirement coverage matrix.

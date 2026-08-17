@@ -25,11 +25,11 @@ Use the live MCP schema rather than duplicating its field catalog. Confirm that 
 When Jira Development data exposes branches, commits, PR identifiers, targets, or states:
 
 - extract the branch names, commit ids, repository, target, and state that matter;
-- map a bare PR id/URL to its branch or commit range through this data;
-- use `local-change-access` to inspect the resolved change set over the local `code/` repository;
+- resolve a PR URL or its repository coordinates and inspect the specific PR through `bitbucket-pr-access`;
+- use `local-change-access` only when a resolved branch or commit/ref range needs local Git evidence;
 - do not claim delivery from an open or declined PR.
 
-If Jira does not map a bare PR to a branch/range, ask for that branch/range rather than guessing or using provider-specific PR refs.
+If Jira does not provide enough coordinates for a numeric PR ID, ask for a PR URL or repository coordinates rather than guessing or using provider-specific PR refs.
 
 ## Failure Handling
 

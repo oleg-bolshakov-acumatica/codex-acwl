@@ -19,11 +19,11 @@ Use repository-approved paths only:
 - Use `jira-similar-search` only when explicit context is insufficient and similar issues can change diagnosis or scope.
 - Use `database-access` for read-only SQL evidence when customer data, backup data, tenant state, or version context can confirm or refute a hypothesis.
 - Use `system-diagnostics-analysis` when version/build, customization, upgrade chronology, schema discovery, or source-branch selection can materially affect diagnosis, branch choice, or validation.
-- Use `local-change-access` when a related change set exists and its diff matters, via git over the local `code/` repository (branch name or commit/ref range; a bare PR id/URL must be mapped to a branch via Jira Development data first).
+- Use `bitbucket-pr-access` when a related pull request exists and its diff, state, or commits matter. Use `local-change-access` for a related branch or commit/ref range via git over the local `code/` repository.
 - Use `root-cause-origin-analysis` to establish which prior feature/ChangeRequest/PR/commit (and its Jira item) introduced the defect, before proposing the fix.
 - Use `acumatica-development-guidance` for applicable repository architecture, conventions, pitfalls, build/startup, testing, and validation guidance once the defect scope and repository are known.
 
-Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, source changes, or SQL when the approved path is available (Jira->jira-internal, Wiki->wiki-internal, source changes->git over local `code/`, SQL->sql.select facade).
+Do not use direct REST, provider modules, browser access, or ad hoc scripts for Jira, Wiki, Bitbucket, source changes, or SQL when the approved path is available.
 
 ## Required Local Context
 

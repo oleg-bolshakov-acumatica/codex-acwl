@@ -21,11 +21,12 @@ Use the repository skills for external context:
 - `database-root-cause-analysis` for tenant-scoped SQL diagnosis; `database-access` for individual read-only queries.
 - `system-diagnostics-analysis` for version/build, customization, upgrade, schema, and branch context.
 - `source-code-analysis` for static product-code analysis.
-- `local-change-access` for a Jira-mapped branch or commit/ref range in local `code/`; map a bare PR id/URL through Jira Development data first.
+- `bitbucket-pr-access` for one specific Bitbucket/Stash pull request.
+- `local-change-access` for a branch or commit/ref range in local `code/`.
 - `root-cause-origin-analysis` for the git-archaeology methodology that identifies the introducing feature/ChangeRequest/PR/commit and its Jira item; it backs Stage 6.5.
 - `jira-comment-drafting` only at the end; it drafts but never posts.
 
-Jira and Wiki reads go through `jira-internal` and `wiki-internal`; SQL uses only `powershell-mcp-facade` `sql.select`. Do not bypass designated access skills with REST, provider modules, browser scraping, direct SQL tooling, or ad hoc scripts.
+Jira, Wiki, and Bitbucket reads go through `jira-internal`, `wiki-internal`, and `bitbucket-internal`; SQL uses only `powershell-mcp-facade` `sql.select`. Do not bypass designated access skills with REST, provider modules, browser scraping, direct SQL tooling, or ad hoc scripts.
 
 ## Local Sources
 

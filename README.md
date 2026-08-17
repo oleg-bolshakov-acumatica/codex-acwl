@@ -2,8 +2,9 @@
 
 A self-contained Codex workspace for Acumatica ERP application engineering on the
 Projects/Construction team. This is the light variant: external context comes
-from the corporate `jira-internal` and `wiki-internal` MCP servers, read-only
-SQL through a local PowerShell facade, and git over a local product checkout.
+from the corporate `jira-internal`, `wiki-internal`, and `bitbucket-internal`
+MCP servers, read-only SQL through a local PowerShell facade, and git over a
+local product checkout.
 
 The operating contract for the agent lives in `AGENTS.md`. This README is for
 humans setting up and maintaining the workspace.
@@ -14,9 +15,8 @@ humans setting up and maintaining the workspace.
   `server.describe_capabilities`.
 - Jira and Wiki are read through the corporate `jira-internal` and
   `wiki-internal` HTTP MCP servers.
-- RAG Memory is removed: no `rag-memory` server, no `mcp-rag`, no RAG skills.
-- Bitbucket/PR MCP access is removed. Change sets are inspected with git over
-  the local `code/` repository via the `local-change-access` skill.
+- Bitbucket pull requests are inspected through `bitbucket-internal`; local
+  branch and commit ranges remain available through `local-change-access`.
 - The local SQL backend is `db-proxy` on `http://127.0.0.1:8765`.
 
 ## Layout
@@ -53,8 +53,9 @@ workspace-owned source for these servers.
 | `powershell-mcp-facade` | stdio | Read-only SQL only. Backend: local `db-proxy` at `127.0.0.1:8765`. |
 | `jira-internal` | http | Internal Jira read path. |
 | `wiki-internal` | http | Internal Confluence/Wiki read path. |
+| `bitbucket-internal` | http | Internal read-only Bitbucket pull-request path. |
 
-The two remote HTTP services require the Acumatica corporate network and any
+The remote HTTP services require the Acumatica corporate network and any
 OAuth flow they request on first use. The SQL facade can list its tools even when
 `db-proxy` is down, but `sql.select` calls require the backend.
 
@@ -99,9 +100,9 @@ scripts/Check-Mcp.ps1 -SkipSmokeTest
 
 Use these checks to separate the failure mode:
 
-- If `jira-internal` or `wiki-internal` is missing, confirm that Codex trusts
+- If `jira-internal`, `wiki-internal`, or `bitbucket-internal` is missing, confirm that Codex trusts
   the workspace and that `.codex/config.toml` contains the expected servers.
-- If `jira-internal` or `wiki-internal` is present but returns an OAuth,
+- If `jira-internal`, `wiki-internal`, or `bitbucket-internal` is present but returns an OAuth,
   unauthorized, or forbidden error, run the matching `codex mcp login` command.
 - If only `powershell-mcp-facade` or `sql.select` fails, check script execution
   policy and the local `db-proxy` backend. The SQL facade does not use
@@ -181,9 +182,9 @@ copied from `codex-acw`.
 
 Place a local clone, worktree, junction, or symlink under `code/` so that
 `code/.git` resolves when source workflows need it. If the source lives
-somewhere else, tell the agent the path. Pull requests are inspected as git
-branches or commit ranges; there is no Bitbucket/PR MCP service in this light
-workspace.
+somewhere else, tell the agent the path. Pull requests can be inspected
+directly through `bitbucket-internal`; local source analysis still requires a
+branch or commit range in `code/`.
 
 ## Workflow Skills
 
@@ -197,7 +198,7 @@ High-level workflow skills:
 - `functional-spec-risk-analysis`
 
 Lower-level access and analysis skills include `jira-access`, `wiki-access`,
-`local-change-access`, `database-access`, `jira-similar-search`,
+`bitbucket-pr-access`, `local-change-access`, `database-access`, `jira-similar-search`,
 `related-items-analysis`, `source-code-analysis`,
 `migration-script-consistency-review`, `system-diagnostics-analysis`,
 `database-root-cause-analysis`, `root-cause-origin-analysis`,
@@ -205,7 +206,7 @@ Lower-level access and analysis skills include `jira-access`, `wiki-access`,
 
 ## Safety Model
 
-The workspace is read-only by default. Jira, Wiki, and SQL access
+The workspace is read-only by default. Jira, Wiki, Bitbucket, and SQL access
 must go through the declared MCP servers and repository skills. SQL is limited
 to read-only `SELECT` through `powershell-mcp-facade`; `db-proxy` enforces this
 at the backend.

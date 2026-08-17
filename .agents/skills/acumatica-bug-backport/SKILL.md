@@ -11,7 +11,7 @@ Create one validated local backport commit for an existing backport Bug. Assume 
 
 Finish with a local backport branch and commit. Do not create or modify Jira items, push, create or update a pull request, manage cascade merges, or independently redesign the source fix.
 
-Use `jira-access` only to read the two Bug keys, summaries, links, target/fix version, and source Jira Development data. Map a source PR id/URL to its branch or commit range through Jira Development data, then use `local-change-access` to inspect the exact source change set. Use `acumatica-git-workflow` for all Git discovery, branch creation, formatting preservation, staging, commit, and approval rules.
+Use `jira-access` only to read the two Bug keys, summaries, links, target/fix version, and source Jira Development data. Use `bitbucket-pr-access` when a source pull request is needed to resolve its exact commits, state, or changed files; use `local-change-access` to inspect a source branch or commit/ref range. Use `acumatica-git-workflow` for all Git discovery, branch creation, formatting preservation, staging, commit, and approval rules.
 
 Use `acumatica-development-guidance` only after the exact target branch and source fix are resolved, and only for applicable repository conventions, build, testing, or validation guidance. It does not determine the target branch, source commits, backport policy, or approval boundary.
 
@@ -59,9 +59,9 @@ When changed files include `WebSites/Pure/DB/MSSQL/*.sql`, use `migration-script
 Perform safe discovery before requesting confirmation:
 
 1. Inspect worktree status, current branch, remotes, worktrees, refs, and existing task branches. Stop before switching when the worktree is dirty or ownership is unclear.
-2. Resolve the source commits from explicit input, Jira Development data, and the Jira-mapped source branch/ref range. Verify that each commit belongs to the delivered source fix and order commits from oldest dependency to newest.
+2. Resolve the source commits from explicit input, Jira Development data, and a source pull request or branch/ref range. Verify that each commit belongs to the delivered source fix and order commits from oldest dependency to newest.
 3. For a source merge commit, identify the underlying fix commits. Do not use `cherry-pick -m` unless the mainline parent and consequences are explicit and separately approved.
-4. Inspect source diffs and dependencies with `local-change-access`. Include required companion changes and exclude unrelated changes.
+4. Inspect source diffs and dependencies with `bitbucket-pr-access` for a source pull request or `local-change-access` for a source branch/range. Include required companion changes and exclude unrelated changes.
 5. Verify that every source commit object is available locally. If not, identify the exact source remote ref for a targeted fetch.
 6. Resolve the exact target branch and query its current remote SHA with read-only remote inspection.
 7. Check ancestry, history, and stable patch identity to avoid applying an equivalent change twice.

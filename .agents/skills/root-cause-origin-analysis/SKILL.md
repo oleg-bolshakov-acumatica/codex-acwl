@@ -25,7 +25,7 @@ Dependencies used from here:
 
 - `source-code-analysis` for repository/branch resolution and version-branch derivation.
 - `jira-access` through `jira-internal` to confirm the origin Jira item's summary, type, status/resolution, and fix version.
-- `local-change-access` to resolve the introducing PR or branch/ref range and produce the concrete change link when a PR is identified.
+- `bitbucket-pr-access` to inspect an identified introducing pull request; use `local-change-access` for the branch/ref range and concrete local change link.
 - `related-items-analysis` when the origin item connects to a broader chain of linked issues.
 
 Do not bypass these paths with direct REST, provider modules, browser access, or ad hoc scripts.
@@ -96,7 +96,7 @@ Capture the commit hash, author, date, and message. Acumatica commit messages an
 ### 4. Map commit -> Jira -> PR
 
 - Confirm the Jira item with `jira-access`: summary, type (feature / ChangeRequest / Bug), status/resolution, and fix version. Verify the item's intent actually matches the introducing diff. Do not treat a bare key in a message as proof.
-- Locate the introducing PR with `local-change-access` when a PR can be resolved, and produce the concrete change link: `path:line` at the introducing commit.
+- Inspect the introducing PR with `bitbucket-pr-access` when it can be resolved, and produce the concrete local change link with `local-change-access`: `path:line` at the introducing commit.
 - If the commit has no Jira key, try the Jira development panel of the current issue and `git log` around the commit for an associated PR/branch. If still nothing is found, record the commit as the origin at code level and mark the Jira link **Unclear**.
 
 ### 5. Classify origin type

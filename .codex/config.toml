@@ -28,3 +28,10 @@ tool_timeout_sec = 60
 [mcp_servers.wiki-internal]
 url = "https://wmcp.acumatica.com/mcp"
 tool_timeout_sec = 60
+
+[mcp_servers.bitbucket-internal]
+url = "https://mcpsgw.acumatica.com/bitbucket"
+tool_timeout_sec = 60
+
+[mcp_servers.bitbucket-internal.tools.whoami]
+approval_mode = "approve"

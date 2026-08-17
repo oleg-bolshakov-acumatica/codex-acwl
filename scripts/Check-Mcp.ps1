@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $configPath = Join-Path $projectRoot ".codex/config.toml"
-$expectedServers = @("acumatica-development-guidance", "jira-internal", "powershell-mcp-facade", "wiki-internal")
+$expectedServers = @("acumatica-development-guidance", "bitbucket-internal", "jira-internal", "powershell-mcp-facade", "wiki-internal")
 $expectedFacadeTools = @("sql.select", "server.describe_capabilities")
 $expectedDbProxyBackendVersion = "db-proxy-0.1.0"
 
@@ -254,6 +254,17 @@ if ($blocks.ContainsKey("wiki-internal")) {
     else {
         $failures++
         Write-Host ("[http ] wiki-internal        -> FAILED: expected https://wmcp.acumatica.com/mcp, got {0}" -f $url)
+    }
+}
+
+if ($blocks.ContainsKey("bitbucket-internal")) {
+    $url = Get-TomlStringValue -Block ([string]$blocks["bitbucket-internal"]) -Key "url"
+    if ($url -eq "https://mcpsgw.acumatica.com/bitbucket") {
+        Write-Host ("[http ] bitbucket-internal   -> {0}" -f $url)
+    }
+    else {
+        $failures++
+        Write-Host ("[http ] bitbucket-internal   -> FAILED: expected https://mcpsgw.acumatica.com/bitbucket, got {0}" -f $url)
     }
 }
 
