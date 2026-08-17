@@ -26,7 +26,7 @@ Use the repository skills for external context:
 - `root-cause-origin-analysis` for the git-archaeology methodology that identifies the introducing feature/ChangeRequest/PR/commit and its Jira item; it backs Stage 6.5.
 - `jira-comment-drafting` only at the end; it drafts but never posts.
 
-Jira, Wiki, and Bitbucket reads go through `jira-internal`, `wiki-internal`, and `bitbucket-internal`; SQL uses only `powershell-mcp-facade` `sql.select`. Do not bypass designated access skills with REST, provider modules, browser scraping, direct SQL tooling, or ad hoc scripts.
+Jira, Wiki, and Bitbucket reads go through `jira-internal`, `wiki-internal`, and `bitbucket-internal`; SQL uses only the read-only `powershell-mcp-facade` SQL toolset. Do not bypass designated access skills with REST, provider modules, browser scraping, direct SQL tooling, or ad hoc scripts.
 
 ## Local Sources
 

@@ -154,9 +154,28 @@ function Invoke-InProcessBackendRequest {
             "sql.select" {
                 Import-Module (Join-Path $PSScriptRoot "..\db-proxy\providers\Sql.Provider.psm1") -Force
                 $server = [string](Get-ObjectPropertyValue -Object $arguments -PropertyName "server")
+                $database = [string](Get-ObjectPropertyValue -Object $arguments -PropertyName "database")
                 $schema = [string](Get-ObjectPropertyValue -Object $arguments -PropertyName "schema")
                 $query = [string](Get-ObjectPropertyValue -Object $arguments -PropertyName "query")
-                $result = Invoke-SqlSelect -Server $server -Schema $schema -Query $query
+                $parameters = Get-ObjectPropertyValue -Object $arguments -PropertyName "parameters"
+                $maxRows = [int](Get-ObjectPropertyValue -Object $arguments -PropertyName "maxRows" -DefaultValue 0)
+                $timeoutSec = [int](Get-ObjectPropertyValue -Object $arguments -PropertyName "timeoutSec" -DefaultValue 0)
+                $result = Invoke-SqlSelect -Server $server -Database $database -Schema $schema -Query $query -Parameters $parameters -MaxRows $maxRows -TimeoutSec $timeoutSec
+            }
+
+            "sql.list_databases" {
+                Import-Module (Join-Path $PSScriptRoot "..\db-proxy\providers\Sql.Provider.psm1") -Force
+                $result = Get-SqlDatabases -Server ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "server")) -NamePattern ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "namePattern")) -MaxResults ([int](Get-ObjectPropertyValue -Object $arguments -PropertyName "maxResults" -DefaultValue 0)) -TimeoutSec ([int](Get-ObjectPropertyValue -Object $arguments -PropertyName "timeoutSec" -DefaultValue 0))
+            }
+
+            "sql.search_schema" {
+                Import-Module (Join-Path $PSScriptRoot "..\db-proxy\providers\Sql.Provider.psm1") -Force
+                $result = Find-SqlSchemaObjects -Server ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "server")) -Database ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "database")) -SchemaName ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "schemaName")) -TablePattern ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "tablePattern")) -ColumnPattern ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "columnPattern")) -MaxResults ([int](Get-ObjectPropertyValue -Object $arguments -PropertyName "maxResults" -DefaultValue 0)) -TimeoutSec ([int](Get-ObjectPropertyValue -Object $arguments -PropertyName "timeoutSec" -DefaultValue 0))
+            }
+
+            "sql.describe_table" {
+                Import-Module (Join-Path $PSScriptRoot "..\db-proxy\providers\Sql.Provider.psm1") -Force
+                $result = Get-SqlTableDescription -Server ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "server")) -Database ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "database")) -SchemaName ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "schemaName" -DefaultValue "dbo")) -TableName ([string](Get-ObjectPropertyValue -Object $arguments -PropertyName "tableName")) -TimeoutSec ([int](Get-ObjectPropertyValue -Object $arguments -PropertyName "timeoutSec" -DefaultValue 0))
             }
 
             "ping" {

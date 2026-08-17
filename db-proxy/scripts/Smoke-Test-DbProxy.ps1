@@ -1,20 +1,21 @@
 [CmdletBinding()]
 param(
     [string]$Server = "",
-    [string]$Schema = "master",
+    [Alias("Schema")]
+    [string]$Database = "master",
     [string]$Query = "SELECT 1 AS one"
 )
 
 # Smoke test for the DB proxy itself (NOT through the MCP facade).
 #
 # Sends a single POST /invoke with operation=sql.select directly to the proxy
-# and asserts the response is { ok: true, result: { columns, rows, rowCount } }.
+# and asserts the response implements the bounded SQL result contract.
 # Also probes GET /status first.
 #
 # REQUIRES the DB proxy running (start it with db-proxy/Start.ps1 or let
 # scripts/Start-Codex.ps1 auto-start it). The default query (SELECT 1 AS one)
-# is harmless and read-only; override -Server/-Schema/-Query to hit a real DB:
-#   .\Smoke-Test-DbProxy.ps1 -Schema MyDb -Query "SELECT TOP 1 * FROM COMPANY"
+# is harmless and read-only; override -Server/-Database/-Query to hit a real DB:
+#   .\Smoke-Test-DbProxy.ps1 -Database MyDb -Query "SELECT TOP 1 * FROM COMPANY"
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -39,7 +40,7 @@ $body = [ordered]@{
     operation = "sql.select"
     arguments = [ordered]@{
         server = $Server
-        schema = $Schema
+        database = $Database
         query  = $Query
     }
 } | ConvertTo-Json -Depth 10 -Compress
@@ -58,7 +59,7 @@ if (-not $response.ok) {
 }
 
 $result = $response.result
-$missing = @("columns", "rows", "rowCount") | Where-Object { $null -eq $result.PSObject.Properties[$_] }
+$missing = @("server", "database", "columns", "rows", "rowCount", "truncated") | Where-Object { $null -eq $result.PSObject.Properties[$_] }
 if (@($missing).Count -gt 0) {
     Write-Error ("sql.select result is missing expected field(s): {0}." -f (@($missing) -join ", "))
     exit 1
@@ -66,5 +67,5 @@ if (@($missing).Count -gt 0) {
 
 $columnCount = @($result.columns).Count
 Write-Host ("[smoke] sql.select OK -> {0} column(s), rowCount={1}." -f $columnCount, $result.rowCount)
-Write-Host "[smoke] DB proxy responded with columns, rows, and rowCount as expected."
+Write-Host "[smoke] DB proxy responded with the bounded SQL result contract."
 exit 0

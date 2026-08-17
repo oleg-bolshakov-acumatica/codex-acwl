@@ -11,8 +11,8 @@ humans setting up and maintaining the workspace.
 
 ## What Light Changes Vs. `codex-acw`
 
-- `powershell-mcp-facade` is trimmed to read-only SQL only: `sql.select` plus
-  `server.describe_capabilities`.
+- `powershell-mcp-facade` is trimmed to read-only SQL only: bounded select,
+  database discovery, and schema metadata tools plus `server.describe_capabilities`.
 - Jira and Wiki are read through the corporate `jira-internal` and
   `wiki-internal` HTTP MCP servers.
 - Bitbucket pull requests are inspected through `bitbucket-internal`; local
@@ -57,7 +57,7 @@ workspace-owned source for these servers.
 
 The remote HTTP services require the Acumatica corporate network and any
 OAuth flow they request on first use. The SQL facade can list its tools even when
-`db-proxy` is down, but `sql.select` calls require the backend.
+`db-proxy` is down, but SQL tool calls require the backend.
 
 ## MCP Authorization Troubleshooting
 
@@ -96,6 +96,7 @@ owned by this workspace.
 ```powershell
 scripts/Check-Mcp.ps1
 scripts/Check-Mcp.ps1 -SkipSmokeTest
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Smoke-Test-Sql-Discovery.ps1
 ```
 
 Use these checks to separate the failure mode:
@@ -104,11 +105,11 @@ Use these checks to separate the failure mode:
   the workspace and that `.codex/config.toml` contains the expected servers.
 - If `jira-internal`, `wiki-internal`, or `bitbucket-internal` is present but returns an OAuth,
   unauthorized, or forbidden error, run the matching `codex mcp login` command.
-- If only `powershell-mcp-facade` or `sql.select` fails, check script execution
+- If only `powershell-mcp-facade` or a SQL tool fails, check script execution
   policy and the local `db-proxy` backend. The SQL facade does not use
   `codex mcp login`.
 - If `http://127.0.0.1:8765/status` responds with a backend other than
-  `db-proxy-0.1.0`, stop the process using that endpoint or change
+  `db-proxy-0.2.0`, stop the process using that endpoint or change
   `db-proxy/config/db-proxy.config.json` before starting Codex.
 
 Do not use Jira personal access tokens, direct Jira or Confluence REST calls, or
@@ -131,8 +132,9 @@ workspace.
 - `codex` must be installed and available in `PATH`.
 - Jira and Wiki MCP access requires the Acumatica corporate network and the
   OAuth flow requested by Codex on first use.
-- SQL diagnostics require the `SQLPS` module / `Invoke-Sqlcmd` and access to the
-  target SQL Server. MCP configuration and Jira/Wiki usage do not require SQLPS.
+- SQL diagnostics require access to the target SQL Server under the current
+  Windows identity. MCP configuration and Jira/Wiki usage do not require SQL
+  client credentials or tokens.
 - The product source checkout is not included. Place a clone, worktree,
   junction, or symlink under `code/`, or provide another path when source-code
   workflows need it.
@@ -149,7 +151,7 @@ The launcher:
 
 1. Starts `db-proxy` if `http://127.0.0.1:8765/status` is not responding.
 2. Fails fast if that endpoint is already occupied by a backend other than
-   `db-proxy-0.1.0`.
+   `db-proxy-0.2.0`.
 3. Verifies that `.codex/config.toml` exists.
 4. Launches `codex -C <workspace-root>`, letting Codex load the trusted project
    MCP configuration.

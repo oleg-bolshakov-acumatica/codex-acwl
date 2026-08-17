@@ -2,7 +2,7 @@
   "server": {
     "id": "powershell-mcp-facade",
     "name": "PowerShell MCP Facade Server",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "protocolVersion": "2025-06-18",
     "supportedProtocolVersions": ["2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25"],
     "transport": "stdio",
@@ -13,7 +13,7 @@
     "allowInProcessFallback": false,
     "http": {
       "baseUrl": "http://127.0.0.1:8765",
-      "requestTimeoutSec": 45
+      "requestTimeoutSec": 60
     }
   }
 }

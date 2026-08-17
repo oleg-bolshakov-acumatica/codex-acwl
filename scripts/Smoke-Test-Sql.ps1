@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$Server = "",
-    [string]$Schema = "master",
+    [Alias("Schema")]
+    [string]$Database = "master",
     [string]$Query = "SELECT 1 AS one"
 )
 
@@ -9,16 +10,16 @@ param(
 #
 # Drives the stdio MCP server (scripts/Start-McpServer.ps1) over a single
 # JSON-RPC session: initialize -> notifications/initialized -> tools/call for
-# sql.select with { server, schema, query }, then asserts that the returned
-# structuredContent carries `columns`, `rows`, and `rowCount`.
+# sql.select with { server, database, query }, then asserts that the returned
+# structuredContent carries the bounded-result contract.
 #
 # REQUIRES the db-proxy backend running at http://127.0.0.1:8765; the
 # facade forwards sql.select to it. If the backend is down this test fails with
 # a backend_unavailable error from the facade.
 #
 # The default query (SELECT 1 AS one) is harmless and read-only. Override
-# -Server / -Schema / -Query to point at, e.g., a COMPANY table:
-#   .\Smoke-Test-Sql.ps1 -Schema MyDb -Query "SELECT TOP 1 * FROM COMPANY"
+# -Server / -Database / -Query to point at, e.g., a COMPANY table:
+#   .\Smoke-Test-Sql.ps1 -Database MyDb -Query "SELECT TOP 1 * FROM COMPANY"
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -31,19 +32,14 @@ if (-not (Test-Path -LiteralPath $serverScript)) {
     exit 1
 }
 
-function ConvertTo-JsonLine {
-    param([Parameter(Mandatory = $true)] $Object)
-    return ($Object | ConvertTo-Json -Compress -Depth 20)
-}
-
 $arguments = [ordered]@{
     server = $Server
-    schema = $Schema
+    database = $Database
     query  = $Query
 }
 
 $requests = @(
-    ConvertTo-JsonLine ([ordered]@{
+    ([ordered]@{
         jsonrpc = "2.0"
         id = 1
         method = "initialize"
@@ -52,13 +48,13 @@ $requests = @(
             capabilities = [ordered]@{}
             clientInfo = [ordered]@{ name = "codex-acwl-smoke-sql"; version = "0" }
         }
-    }),
-    ConvertTo-JsonLine ([ordered]@{
+    } | ConvertTo-Json -Compress -Depth 20),
+    ([ordered]@{
         jsonrpc = "2.0"
         method = "notifications/initialized"
         params = [ordered]@{}
-    }),
-    ConvertTo-JsonLine ([ordered]@{
+    } | ConvertTo-Json -Compress -Depth 20),
+    ([ordered]@{
         jsonrpc = "2.0"
         id = 2
         method = "tools/call"
@@ -66,7 +62,34 @@ $requests = @(
             name = "sql.select"
             arguments = $arguments
         }
-    })
+    } | ConvertTo-Json -Compress -Depth 20),
+    ([ordered]@{
+        jsonrpc = "2.0"
+        id = 3
+        method = "tools/call"
+        params = [ordered]@{
+            name = "sql.select"
+            arguments = [ordered]@{
+                server = $Server
+                database = $Database
+                query = "SELECT @projectId AS projectId"
+                parameters = [ordered]@{ projectId = 42 }
+            }
+        }
+    } | ConvertTo-Json -Compress -Depth 20),
+    ([ordered]@{
+        jsonrpc = "2.0"
+        id = 4
+        method = "tools/call"
+        params = [ordered]@{
+            name = "sql.select"
+            arguments = [ordered]@{
+                server = $Server
+                database = $Database
+                query = "SELECT 1 INTO MCP_FORBIDDEN_SMOKE"
+            }
+        }
+    } | ConvertTo-Json -Compress -Depth 20)
 ) -join [Environment]::NewLine
 
 Push-Location $projectRoot
@@ -78,6 +101,8 @@ finally {
 }
 
 $response = $null
+$parameterResponse = $null
+$blockedResponse = $null
 foreach ($line in $output) {
     if ($line -notmatch '^\s*\{') {
         continue
@@ -85,7 +110,12 @@ foreach ($line in $output) {
     $message = $line | ConvertFrom-Json
     if ($null -ne $message.PSObject.Properties["id"] -and $message.id -eq 2) {
         $response = $message
-        break
+    }
+    if ($null -ne $message.PSObject.Properties["id"] -and $message.id -eq 3) {
+        $parameterResponse = $message
+    }
+    if ($null -ne $message.PSObject.Properties["id"] -and $message.id -eq 4) {
+        $blockedResponse = $message
     }
 }
 
@@ -117,7 +147,7 @@ if ($null -eq $structured) {
     exit 1
 }
 
-$missing = @("columns", "rows", "rowCount") | Where-Object { $null -eq $structured.PSObject.Properties[$_] }
+$missing = @("server", "database", "columns", "rows", "rowCount", "truncated") | Where-Object { $null -eq $structured.PSObject.Properties[$_] }
 if (@($missing).Count -gt 0) {
     Write-Error ("sql.select structuredContent is missing expected field(s): {0}." -f (@($missing) -join ", "))
     exit 1
@@ -126,5 +156,26 @@ if (@($missing).Count -gt 0) {
 $columnCount = @($structured.columns).Count
 $rowCount = $structured.rowCount
 Write-Host ("[smoke] sql.select OK -> {0} column(s), rowCount={1}." -f $columnCount, $rowCount)
-Write-Host "[smoke] structuredContent contains columns, rows, and rowCount as expected."
+Write-Host "[smoke] structuredContent contains the bounded SQL result contract."
+
+if ($null -eq $parameterResponse -or $null -eq $parameterResponse.result -or $parameterResponse.result.isError) {
+    $detail = if ($null -ne $parameterResponse -and $null -ne $parameterResponse.result -and @($parameterResponse.result.content).Count -gt 0) { @($parameterResponse.result.content)[0].text } else { "no result" }
+    Write-Error ("Parameterized sql.select failed: {0}" -f $detail)
+    exit 1
+}
+
+$parameterRows = @($parameterResponse.result.structuredContent.rows)
+if ($parameterRows.Count -ne 1 -or [int]$parameterRows[0].projectId -ne 42) {
+    Write-Error "Parameterized sql.select did not preserve the expected value."
+    exit 1
+}
+
+Write-Host "[smoke] named SQL parameters are forwarded through the facade."
+
+if ($null -eq $blockedResponse -or $null -eq $blockedResponse.result -or -not $blockedResponse.result.isError) {
+    Write-Error "sql.select failed to reject SELECT INTO through the facade."
+    exit 1
+}
+
+Write-Host "[smoke] SELECT INTO is rejected through the facade."
 exit 0

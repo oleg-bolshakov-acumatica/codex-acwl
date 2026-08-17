@@ -10,7 +10,7 @@ The project-local MCP servers are declared in the trusted Codex project config:
 
 Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local SQL backend when needed and launches Codex with `-C <workspace-root>` so the project config is in scope. The fixed workspace MCP server set for this workspace is:
 
-- `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`) over the local `db-proxy` backend (stdio). It exposes no Jira, Wiki, or PR tools.
+- `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`, database discovery, and schema metadata) over the local `db-proxy` backend (stdio). It exposes no Jira, Wiki, or PR tools.
 - `acumatica-development-guidance` - optional read-only repository guidance for architecture, conventions, build, testing, validation, and review.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
 - `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
@@ -37,7 +37,7 @@ Use only the designated repository skills for external context:
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
 - `acumatica-git-workflow` for Jira-related branch/commit discovery and approval-gated Git mutations.
 - `root-cause-origin-analysis` for establishing which prior feature/ChangeRequest/PR/commit and its Jira item introduced a defect, via read-only git archaeology (`blame`, `log -S`/`-G`, `show`) over `code/` mapped to Jira.
-- `database-access` for read-only SQL evidence through the `powershell-mcp-facade` `sql.select` tool.
+- `database-access` for read-only SQL evidence and metadata discovery through the `powershell-mcp-facade` SQL tools.
 - `acumatica-development-guidance` for optional repository-specific architecture, conventions, pitfalls, build/startup, testing, validation, and review guidance.
 
 Do not bypass these paths with direct REST, provider modules, ad hoc scripts, browser scraping, or direct SQL tooling when the repository skill path is available.

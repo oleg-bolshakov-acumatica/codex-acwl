@@ -12,8 +12,8 @@ $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $configPath = Join-Path $projectRoot ".codex/config.toml"
 $expectedServers = @("acumatica-development-guidance", "bitbucket-internal", "jira-internal", "powershell-mcp-facade", "wiki-internal")
-$expectedFacadeTools = @("sql.select", "server.describe_capabilities")
-$expectedDbProxyBackendVersion = "db-proxy-0.1.0"
+$expectedFacadeTools = @("sql.describe_table", "sql.list_databases", "sql.search_schema", "sql.select", "server.describe_capabilities")
+$expectedDbProxyBackendVersion = "db-proxy-0.2.0"
 
 if (-not (Test-Path -LiteralPath $configPath)) {
     Write-Error "Missing Codex project config: .codex/config.toml was not found at the workspace root."

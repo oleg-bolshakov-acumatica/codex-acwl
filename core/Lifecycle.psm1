@@ -82,7 +82,7 @@ function New-McpInitializeResult {
             }
         }
         serverInfo = Get-McpServerInfo
-        instructions = "Use this MCP facade for read-only SQL context only (sql.select). Prefer tools/call for agent-driven retrieval. Use server.describe_capabilities to inspect available tools, resource templates, output shapes, defaults, and backend status. For Jira use the jira-internal MCP server, for Wiki use the wiki-internal MCP server, and for pull-request / branch diffs use git over the local code/ repository. Backend/provider details are intentionally hidden behind this facade."
+        instructions = "Use this MCP facade for read-only SQL diagnostics. Start with sql.list_databases when the target database is unknown, then sql.search_schema or sql.describe_table when metadata is uncertain, and sql.select for bounded evidence. Use named parameters for external values. Use server.describe_capabilities to inspect available tools, resource templates, output shapes, defaults, and backend status. For Jira use the jira-internal MCP server, for Wiki use the wiki-internal MCP server, and for pull-request / branch diffs use git over the local code/ repository. Backend/provider details are intentionally hidden behind this facade."
     }
 }
 

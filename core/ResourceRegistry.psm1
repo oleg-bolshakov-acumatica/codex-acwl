@@ -79,10 +79,10 @@ function Get-McpResourceTemplates {
 
     return ,@(
         [ordered]@{
-            uriTemplate = "sql://select/{schema}?query={query}&server={server}"
+            uriTemplate = "sql://select/{database}?query={query}&server={server}"
             name = "SQL Select"
             title = "SQL Select"
-            description = "Read-only SQL SELECT result retrieved through the MCP facade. Query string must include query=... and may include server=..."
+            description = "Read-only SQL SELECT result retrieved through the MCP facade. Use tools/call for parameters and bounded limits."
             mimeType = "application/json"
             annotations = [ordered]@{
                 audience = @("assistant")
@@ -136,9 +136,9 @@ function Invoke-McpResourceRead {
     }
 
     if ($parsedUri.Scheme -eq "sql" -and $parsedUri.Host -eq "select") {
-        $schema = $parsedUri.AbsolutePath.Trim("/")
-        if ([string]::IsNullOrWhiteSpace($schema)) {
-            throw "Missing schema in SQL resource URI."
+        $database = $parsedUri.AbsolutePath.Trim("/")
+        if ([string]::IsNullOrWhiteSpace($database)) {
+            throw "Missing database in SQL resource URI."
         }
 
         $query = [System.Web.HttpUtility]::ParseQueryString($parsedUri.Query)
@@ -151,7 +151,7 @@ function Invoke-McpResourceRead {
 
         $backendResponse = Invoke-McpBackendRequest -Operation "sql.select" -Arguments ([ordered]@{
             server = $server
-            schema = $schema
+            database = $database
             query = $sqlQuery
         })
 

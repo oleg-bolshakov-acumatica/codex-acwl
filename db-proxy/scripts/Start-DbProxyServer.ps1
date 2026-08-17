@@ -450,16 +450,60 @@ function Invoke-ResourceProxyOperation {
                     status = "ok"
                     mode = "http"
                     backendAvailable = $true
-                    backendVersion = "db-proxy-0.1.0"
+                    backendVersion = "db-proxy-0.2.0"
                 }
             }
         }
 
         "sql.select" {
             $server = [string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "server")
+            $database = [string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "database")
             $schema = [string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "schema")
             $query = [string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "query")
-            $result = Invoke-SqlSelect -Server $server -Schema $schema -Query $query
+            $parameters = Get-ObjectPropertyValue -Object $Arguments -PropertyName "parameters"
+            $maxRows = [int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "maxRows" -DefaultValue 0)
+            $timeoutSec = [int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "timeoutSec" -DefaultValue 0)
+            $result = Invoke-SqlSelect -Server $server -Database $database -Schema $schema -Query $query -Parameters $parameters -MaxRows $maxRows -TimeoutSec $timeoutSec
+            return [ordered]@{
+                ok = $true
+                result = $result
+            }
+        }
+
+        "sql.list_databases" {
+            $result = Get-SqlDatabases `
+                -Server ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "server")) `
+                -NamePattern ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "namePattern")) `
+                -MaxResults ([int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "maxResults" -DefaultValue 0)) `
+                -TimeoutSec ([int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "timeoutSec" -DefaultValue 0))
+            return [ordered]@{
+                ok = $true
+                result = $result
+            }
+        }
+
+        "sql.search_schema" {
+            $result = Find-SqlSchemaObjects `
+                -Server ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "server")) `
+                -Database ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "database")) `
+                -SchemaName ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "schemaName")) `
+                -TablePattern ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "tablePattern")) `
+                -ColumnPattern ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "columnPattern")) `
+                -MaxResults ([int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "maxResults" -DefaultValue 0)) `
+                -TimeoutSec ([int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "timeoutSec" -DefaultValue 0))
+            return [ordered]@{
+                ok = $true
+                result = $result
+            }
+        }
+
+        "sql.describe_table" {
+            $result = Get-SqlTableDescription `
+                -Server ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "server")) `
+                -Database ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "database")) `
+                -SchemaName ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "schemaName" -DefaultValue "dbo")) `
+                -TableName ([string](Get-ObjectPropertyValue -Object $Arguments -PropertyName "tableName")) `
+                -TimeoutSec ([int](Get-ObjectPropertyValue -Object $Arguments -PropertyName "timeoutSec" -DefaultValue 0))
             return [ordered]@{
                 ok = $true
                 result = $result

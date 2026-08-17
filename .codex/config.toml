@@ -4,7 +4,7 @@ args = ["-NoProfile", "-ExecutionPolicy", "RemoteSigned", "-File", "scripts/Star
 cwd = "."
 startup_timeout_sec = 20
 tool_timeout_sec = 60
-enabled_tools = ["sql.select", "server.describe_capabilities"]
+enabled_tools = ["sql.select", "sql.list_databases", "sql.search_schema", "sql.describe_table", "server.describe_capabilities"]
 
 [mcp_servers.acumatica-development-guidance]
 command = "powershell"

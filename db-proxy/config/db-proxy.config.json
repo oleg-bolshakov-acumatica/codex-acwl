@@ -5,6 +5,6 @@
   },
   "http": {
     "baseUrl": "http://127.0.0.1:8765",
-    "requestTimeoutSec": 45
+    "requestTimeoutSec": 60
   }
 }

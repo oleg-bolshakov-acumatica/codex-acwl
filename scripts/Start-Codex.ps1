@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$expectedDbProxyBackendVersion = "db-proxy-0.1.0"
+$expectedDbProxyBackendVersion = "db-proxy-0.2.0"
 
 function Get-DbProxyBaseUrl {
     param([Parameter(Mandatory)] [string]$ProjectRoot)
