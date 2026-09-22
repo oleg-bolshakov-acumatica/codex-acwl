@@ -39,6 +39,7 @@ Guidelines:
 - do not persist a value only to simplify UI or report code unless every update path can be identified and maintained;
 - when a value is persisted, trace document entry, release/posting, import/API, correction, reversal, deletion, and recalculation paths that must update it;
 - when a value is derived, verify that reports, projections, inquiries, APIs, and UI surfaces derive it from equivalent source data;
+- for a shared or externally consumed field, action, status, selector, projection, or endpoint, identify consumers and compatibility expectations before changing its shape or meaning; do not assume that a change is isolated to the initiating screen.
 - record a non-obvious source-of-truth decision in the scope ledger, a session note handled through `acumatica-session-notes`, or the final implementation summary.
 
 If two sources can disagree after normal processing, rebuild, or import, treat that as a feature design risk until the intended precedence is confirmed.
@@ -132,6 +133,20 @@ Do not expand the implementation slice merely to update every possible consumer.
 ## 9. UI Computed Values and Cache Strategy
 
 Avoid database queries in frequently fired UI events such as `RowSelected`.
+
+## Validation Placement and Lifecycle Parity
+
+Choose validation placement from the information required to make the decision:
+
+| Need | Preferred mechanism |
+|---|---|
+| Invariant of the current field or row | DAC attribute, formula, restrictor, or focused `FieldVerifying` |
+| Cross-row or database-dependent document validation | Persist or explicit document action after a bounded authoritative read |
+| State-transition rule | Workflow transition/action implementation and server-side persistence guard |
+| Posting, accounting, or irreversible state rule | Release/processing path |
+| Repeated UI availability/display state | Existing view, cached aggregate, or bounded request-level data; never per-row `RowSelected` reads |
+
+The online path and any delete, void, reversal, correction, copy/template, import, API, processing, and rebuild path must share the same source-of-truth classifier or explicitly documented equivalent. A validation or accumulator rule is not complete until its applicable reconstruction and terminal-state behavior is reviewed.
 
 Preferred options:
 

@@ -25,8 +25,9 @@ This document defines framework-level architecture rules. For practical feature 
 ## 2. Data Access Classes (DACs)
 
 ### 2.1 Structure Requirements
+
+**Rule:** Do not add `[Serializable]` to DACs or DAC extensions. DAC persistence and cache behavior are defined by Acumatica attributes and graph/cache mechanisms; do not introduce serialization attributes as a substitute for tracing those contracts.
 ```csharp
-[Serializable]
 [PXCacheName("Display Name")]
 public class MyEntity : PXBqlTable, IBqlTable
 {
@@ -79,6 +80,10 @@ public virtual int? ProjectID
 ```
 
 This rule applies to all DACs and DAC extensions unless there is a strictly justified technical exception.
+
+### 2.2.1 Field Member Ordering
+
+For every DAC field, keep its BQL nested type, all attributes, and the CLR property adjacent and in that order. Do not place a different field member between them. This applies to DACs, DAC extensions, projections, and cache extensions.
 
 ### 2.3 Mandatory System Fields
 Every persistent DAC must include:
@@ -274,6 +279,8 @@ public static class FK
 | `[PXDBDefault(typeof(Parent.field))]` | Cascade default values from parent |
 | `[PXDBChildIdentity(typeof(Parent.identityField))]` | Link identity to parent's auto-number |
 
+For parent-child or referenced-record behavior, first model the relation with the FK class and declarative attributes. Use `[PXParent]`, `[PXDBDefault]`, and `[PXDBChildIdentity]` for parent-owned cascade/default/identity semantics; use `[PXForeignReference]` when a reference must prevent deletion of a referenced record. Imperative delete guards or manual key copying are allowed only when these mechanisms cannot represent the required behavior, and then require an explicit rationale and delete/cascade validation.
+
 ### 3.3 Usage in BQL
 ```csharp
 // CORRECT - Use FK for joins and conditions
@@ -363,7 +370,7 @@ public abstract class DocumentProcessingExtension<TGraph, TDocument> : PXGraphEx
     where TGraph : PXGraph
     where TDocument : class, IBqlTable, new()
 {
-    public static bool IsActive() => true;
+    // Add IsActive() only when this extension has a feature or setup activation condition.
     
     public virtual void ProcessDocument(TDocument doc)
     {
@@ -382,6 +389,7 @@ public class DocumentService : IDocumentService
 - Make all methods that may need customization `virtual`.
 - Do not use `static` methods for business behavior that may need customization.
 - Static methods are acceptable for pure utilities, constants, list attributes, BQL constants, and shared framework-neutral calculations that do not need graph state or customization hooks.
+- For feature behavior implemented on one graph, use graph or graph-extension instance methods. For replaceable behavior shared by multiple graphs, use an interface implemented by an abstract graph extension and resolve it through `FindImplementation<T>()`. Use `GetExtension<T>()` only when the caller intentionally depends on a concrete extension. Record the chosen seam in the stage plan.
 - Use `[PXOverride]` in extensions to override base graph methods.
 
 ### 5.4 PXOverride Requirements
@@ -502,7 +510,10 @@ Use imperative patterns for graph-specific logic:
 
 | Logic Type | Implementation |
 |------------|----------------|
-| Complex validation | `FieldVerifying` event handler |
+| Current-field or row-local validation | DAC attribute or focused `FieldVerifying` event handler |
+| Cross-row or database-dependent validation | Persist gate or explicit document action after a bounded authoritative read |
+| State-transition validation | Workflow transition/action plus server-side persistence guard |
+| Posting or irreversible-state validation | Release or processing path |
 | Graph workflow logic | Event handlers |
 | UI state management | `RowSelected` (no DB queries) |
 | Complex calculations | `FieldDefaulting`, `RowUpdated` |
@@ -730,6 +741,7 @@ protected virtual void _(Events.RowPersisting<SOOrder> e)
 - `FieldVerifying`: Validation, can cancel with exception.
 - `FieldUpdated`: Side effects from field changes.
 - `RowPersisting`: Final validation before database write.
+- Do not run cross-row or database-dependent validation on every field event merely for early feedback. Put it at the persist, workflow transition, release, or processing gate that owns the decision. `RowSelected` is UI-only and must not query the database.
 - Avoid long-running work and heavy computations in event handlers.
 - Be cautious with `FieldDefaulting` and `RowPersisting`; invalid assumptions about cache state can lead to ignored fields or unexpected persisted values.
 - Do not use `RowDeleting` or `RowDeleted` as the primary place for business logic. They should normally be limited to validation or cleanup tied directly to deletion.
@@ -794,14 +806,14 @@ PX.Objects/
 
 | Extension Type | Location | Naming Convention |
 |----------------|----------|-------------------|
-| Feature Extension | `{Module}/GraphExtensions/{BaseGraph}Ext/` | `{FeatureName}Ext.cs` |
-| Cross-Module Extension | `{Module}/GraphExtensions/{SourceModule}{Graph}Ext/` | `{SourceModule}{Graph}Ext.cs` |
+| Feature Extension | `{Module}/{Feature}/GraphExtensions/` | `{BaseGraph}{Role}Ext.cs` |
+| Cross-Module Extension | `{Module}/GraphExtensions/{BaseGraph}Ext/` | `{SourceModule}{BaseGraph}{Role}Ext.cs` |
 | Nested Extension (inside graph) | Same file as base graph | `public class {ExtName} : PXGraphExtension<BaseGraph>` |
 | Activity Details | `{Module}/GraphExtensions/` | `{Graph}_ActivityDetailsExt.cs` |
 | External Tax | `{Module}/GraphExtensions/` | `{Graph}ExternalTax.cs` |
 
 **Rules:**
-1. Extensions that extend graphs from the **same module** can be placed in the `GraphExtensions/` subfolder or nested inside the graph class.
+1. Extensions that extend graphs from the **same module** can be placed in the `GraphExtensions/` subfolder or nested inside the graph class. Feature-owned extensions follow the feature folder and namespace convention in Section 11.6.1.
 2. Extensions that extend graphs from **different modules** should be in the extending module's `GraphExtensions/` folder.
 3. Use nested classes for tightly coupled extensions that are always active with the base graph.
 
@@ -891,9 +903,17 @@ PX.Objects/Common/Attributes/
 `-- PXProviderTypeSelectorAttribute.cs
 ```
 
-### 11.6 Messages Placement Rules
+### 11.6 Namespace, Extension, and Messages Rules
 
-**Rule**: Each module should have a single `Messages.cs` file in its `Descriptor` folder containing all localizable strings.
+#### 11.6.1 Feature Namespace and Extension Naming
+
+Physical folders group implementation ownership; namespaces express the public modular contract. New DACs may live in a feature folder but remain in their module namespace, for example `PX.Objects.PM`. Feature-specific graph extensions use `PX.Objects.<Module>.<Feature>.GraphExtensions` and live under the corresponding `GraphExtensions` folder. Name them compactly as `<BaseGraph><Role>Ext`; do not repeat the feature name in the type when the namespace already provides it.
+
+Keep broadly consumed non-extension contracts in the module namespace only when their ownership is genuinely module-wide. Otherwise use the feature namespace and record the reason in the stage plan.
+
+#### 11.6.2 Messages Placement Rules
+
+**Rule**: Each module or feature namespace should have a single `Messages.cs` file in its `Descriptor` folder. Place module-wide strings in the module container and feature-owned strings in the feature container; do not duplicate a message between them.
 
 | Messages Type | Location |
 |---------------|----------|
@@ -974,7 +994,7 @@ When adding feature-specific functionality, organize extensions by feature:
 PX.Objects/{Module}/
 `-- {FeatureName}/
     |-- GraphExtensions/
-    |   `-- {Graph}{Feature}Ext.cs
+    |   `-- {BaseGraph}{Role}Ext.cs
     |-- CacheExtensions/
     |   `-- {DAC}{Feature}Ext.cs
     `-- Descriptor/
@@ -985,8 +1005,8 @@ PX.Objects/{Module}/
 ```
 PX.Objects/AP/MultipleBaseCurrencies/
 |-- GraphExtensions/
-|   |-- APInvoiceEntryMultipleBaseCurrencies.cs
-|   `-- APPaymentEntryMultipleBaseCurrencies.cs
+|   |-- APInvoiceEntryCurrencyExt.cs
+|   `-- APPaymentEntryCurrencyExt.cs
 `-- CacheExtensions/
     `-- APInvoiceMultipleBaseCurrenciesRestriction.cs
 ```
@@ -1017,7 +1037,7 @@ PX.Objects/SO/
 | Artifact | Primary Location | Naming Pattern |
 |----------|------------------|----------------|
 | Graph | `{Module}/` | `{Entity}{Type}.cs` |
-| Graph Extension | `{Module}/GraphExtensions/` | `{BaseGraph}{Feature}Ext.cs` |
+| Graph Extension | `{Module}/{Feature}/GraphExtensions/` | `{BaseGraph}{Role}Ext.cs` |
 | DAC | `{Module}/DAC/` | `{Entity}.cs` |
 | DAC Extension | `{Module}/DAC/CacheExtensions/` | `{DAC}Ext.cs` |
 | Attribute | `{Module}/Descriptor/` | `{Purpose}Attribute.cs` |
@@ -1067,8 +1087,8 @@ CREATE TABLE [TableName] (
     [CompanyID] INT NOT NULL,
     [KeyField] INT NOT NULL IDENTITY,
     [StringField] NVARCHAR(50) NULL,
-    [BoolField] BIT NOT NULL DEFAULT ((0)),
-    [DecimalField] DECIMAL(25,6) NULL,
+    [BoolField] BIT NOT NULL,
+    [DecimalField] DECIMAL(19,4) NULL,
     [DateField] DATETIME NULL,
     [CreatedByID] UNIQUEIDENTIFIER NOT NULL,
     [CreatedByScreenID] CHAR(8) NOT NULL,
@@ -1101,14 +1121,27 @@ CREATE INDEX [TableName_IndexedField] ON [TableName] (
 ```
 
 ### 13.3 DAC to SQL Mapping
-| DAC Attribute | SQL Type |
-|---------------|----------|
+
+#### 13.3.1 Defaults, String Storage, and Decimal Semantics
+
+DDL describes storage, keys, foreign keys, and indexes. Do not add SQL `DEFAULT` constraints for application field defaults; define final business defaults through DAC attributes, formulas, or approved defaulting events. `[PXDBDefault]` remains a parent-derived persistence mechanism, not a general substitute for `[PXDefault]`.
+
+Choose string storage deliberately: `CHAR` for fixed-length non-Unicode technical codes, `VARCHAR` for variable-length non-Unicode technical keys/codes, and `NVARCHAR` for user-facing or localizable text. Classify the value before selecting the DAC attribute and SQL type.
+
+Choose decimal precision by domain meaning: monetary amount `decimal(19,4)`; unit price/cost/weight/volume `decimal(19,6)`; quantity `decimal(25,6)`; percent `decimal(9,6)`. Do not use one generic decimal template.
+
+| DAC Attribute / Value Semantics | SQL Type |
+|----------------------------------|----------|
 | `[PXDBIdentity]` | `INT NOT NULL IDENTITY` |
 | `[PXDBInt]` | `INT NULL/NOT NULL` |
-| `[PXDBString(30)]` | `NVARCHAR(30)` |
-| `[PXDBString(1, IsFixed = true)]` | `CHAR(1)` |
+| `[PXDBString(length, IsUnicode = true)]` | `NVARCHAR(length)` |
+| `[PXDBString(length, IsUnicode = false)]` | `VARCHAR(length)` |
+| `[PXDBString(length, IsUnicode = false, IsFixed = true)]` | `CHAR(length)` |
 | `[PXDBBool]` | `BIT` |
-| `[PXDBDecimal(6)]` | `DECIMAL(25,6)` |
+| Monetary amount / `[PXDBDecimal(4)]` | `DECIMAL(19,4)` |
+| Unit price, cost, weight, or volume / `[PXDBDecimal(6)]` | `DECIMAL(19,6)` |
+| Quantity / `[PXDBDecimal(6)]` | `DECIMAL(25,6)` |
+| Percent / `[PXDBDecimal(6)]` | `DECIMAL(9,6)` |
 | `[PXDBDate]` | `DATETIME` |
 | `[PXDBGuid]` | `UNIQUEIDENTIFIER` |
 | `[PXDBTimestamp]` | `TIMESTAMP NOT NULL` |
@@ -1173,7 +1206,7 @@ using (new PXFieldScope(view.View, typeof(Field1), typeof(Field2)))
 
 ### 15.2 Graphs
 - PascalCase with suffix: `SOOrderEntry`, `InventoryItemMaint`
-- Extensions: `{GraphName}_{Purpose}` (e.g., `SOOrderEntry_Workflow`)
+- Workflow extensions: `{GraphName}_{Purpose}` (e.g., `SOOrderEntry_Workflow`). Feature graph extensions follow Section 11.6.1.
 
 ### 15.3 Fields
 - ID fields: `{Entity}ID` (e.g., `inventoryID`, `customerID`)
@@ -1212,7 +1245,7 @@ using (new PXFieldScope(view.View, typeof(Field1), typeof(Field2)))
 
 ## 17. Extension Development Checklist
 
-1. [ ] Define `IsActive()` method with appropriate feature check.
+1. [ ] For a feature- or setup-gated extension, define `IsActive()` with the appropriate activation condition.
 2. [ ] Use `[PXWorkflowDependsOnType]` for workflow dependencies.
 3. [ ] Make customization-relevant methods `virtual`.
 4. [ ] Use `[PXOverride]` with delegate parameter for base graph method overrides.

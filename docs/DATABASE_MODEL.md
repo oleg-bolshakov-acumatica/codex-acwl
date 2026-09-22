@@ -107,6 +107,22 @@ Use this document to choose the physical storage starting point. Use additional 
 - **Raw SQL MUST include `CompanyID`** in all joins and WHERE clauses.
 - Example: `JOIN PMTask ON PMBudget.CompanyID = PMTask.CompanyID AND PMBudget.ProjectID = PMTask.ProjectID AND PMBudget.ProjectTaskID = PMTask.TaskID`
 
+### Schema Field Storage Contract
+
+For a new or changed persistent field, design the DAC attribute contract and the DatabaseModel column together. DDL defines physical storage, keys, foreign keys, and indexes; business defaults belong to the DAC through `PXDefault`, `PXFormula`, or an approved defaulting event. Do not add SQL `DEFAULT` constraints for application defaults. `PXDBDefault` is reserved for a parent-derived persistence value.
+
+| Field meaning | SQL storage | Typical decimal scale |
+|---|---|---|
+| Fixed technical code | `CHAR`, non-Unicode | n/a |
+| Variable technical key/code | `VARCHAR`, non-Unicode | n/a |
+| User-facing or localizable text | `NVARCHAR` | n/a |
+| Monetary amount | `DECIMAL(19,4)` | 4 |
+| Unit price/cost/weight/volume | `DECIMAL(19,6)` | 6 |
+| Quantity | `DECIMAL(25,6)` | 6 |
+| Percentage | `DECIMAL(9,6)` | 6 |
+
+The stage plan must classify every new string or decimal field by this table and validate DAC-to-SQL type, size, nullability, default provenance, and key/index semantics.
+
 ### Compound Keys
 
 Most Acumatica tables use **composite primary keys**:

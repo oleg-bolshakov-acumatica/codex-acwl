@@ -106,6 +106,23 @@ Mention missing relevant docs in the final result and continue with available so
 - If requirements, branch/range, baseline, repository path, or validation path cannot be identified confidently, stop and report the missing prerequisite.
 - If the task exceeds the selected mode's safe scope, stop and explain why.
 
+## Implementation Stage Gates
+
+Feature work proceeds through explicitly approved business stages. Before changing
+product code for a stage, record a concise plan in the Jira item's session notes
+and request review/approval for that exact stage. A feature-level request does not
+implicitly approve every later stage or a newly discovered design change.
+
+The plan must identify scope and exclusions, requirements and open decisions,
+data ownership and extension points, affected lifecycle and exposed-contract paths,
+validation, and residual risk. Update the same note with the approval, completed
+work, validation evidence, and deferred items at the stage boundary.
+
+Apply the same discipline proportionally to bug fixes. A small bugfix needs a
+bounded diagnosis-and-fix plan before editing. Reclassify it as staged work when
+it changes schema, a shared discriminator or contract, workflow/release/rebuild
+behavior, or more than one independently significant lifecycle path.
+
 If data is insufficient, still perform the maximum useful analysis, list what is missing, state hypotheses as hypotheses, and provide a validation plan instead of guessing.
 
 ## Environment Interaction Principle

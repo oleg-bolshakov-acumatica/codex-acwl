@@ -68,6 +68,31 @@ Use `acumatica-session-notes` when iterative feature work needs session notes cr
 
 For feature work, keep notes focused on handoff context: specification source, branch or PR context, current scope, implemented slices, files changed, important design decisions, validation, unresolved questions, deferred items, and known risks.
 
+### Approved Stage Plan
+
+Before editing product code, create or refresh a purpose-based stage plan in
+`.session-notes/<JiraItemId>/`, normally `stage-<id>-planning.md`. Its status must
+move through **Draft**, **Review requested**, **Approved**, **Implemented**, and
+**Validated**. Do not implement a Draft or Review requested plan. Approval applies
+only to the stated stage; a newly discovered dependency, data-model decision, or
+later stage needs its own review and approval.
+
+Each plan must contain:
+
+- goal, in-scope behavior, explicit exclusions, and deferred work;
+- requirements, source links/sections, assumptions, and decisions still needed;
+- data ownership, DAC/schema impact, namespace/folder/type design, string/decimal storage classification, localization impact, and extension points;
+- applicable path matrix: entry/defaulting, persistence, workflow, release/posting,
+  deletion/void/reversal, recalculation/rebuild, long operations, copy/template,
+  API/import/integration, and inquiry/report/UI;
+- exposed-contract and compatibility impact;
+- focused validation scenarios, including parity and negative cases; and
+- residual risks and approval record.
+
+At completion, append the actual files/behavior changed, validation evidence,
+unresolved questions, and the next proposed stage. Keep historical decisions
+intact; record a later decision as a superseding entry rather than rewriting prior context.
+
 ## Iteration Workflow
 
 Each iteration should be a coherent business slice that can be validated independently.
@@ -118,7 +143,7 @@ For report requirements, trace `rpx -> subreport -> report table -> DAC/projecti
 
 Use [FEATURE_IMPLEMENTATION_PATTERNS.md](FEATURE_IMPLEMENTATION_PATTERNS.md) to structure this tracing and to identify parity risks between normal processing, recalculation, reports, projections, and UI computed values.
 
-### 4. Plan the Slice
+### 4. Plan and Obtain Approval for the Slice
 
 Before editing files:
 
@@ -128,8 +153,9 @@ Before editing files:
 4. Identify the central extension points and affected data paths.
 5. Identify customization impact and prefer overridable graph-level methods where useful.
 6. Identify focused validation commands and manual scenarios.
+7. Create or refresh the approved stage plan described above and request review.
 
-Keep the slice small enough that a build and a manual acceptance scenario can give meaningful confidence.
+Keep the slice small enough that a build and a manual acceptance scenario can give meaningful confidence. Do not edit product code until the user approves the stage plan.
 
 ### 5. Implement
 
@@ -142,6 +168,8 @@ Implementation should follow these Acumatica-specific rules:
 - Keep report layout unchanged unless layout work is explicitly in scope.
 - Avoid broad refactors while implementing a requirement slice.
 - Preserve existing user changes and unrelated dirty worktree state.
+- When changing an externally consumed or reusable surface, inventory consumers
+  and compatibility expectations before changing its shape or meaning.
 
 ### 6. Validate
 
@@ -154,6 +182,7 @@ After each slice:
 5. Recheck report/projection sources, UI computed values, and currency/base amount behavior when the slice touches those areas.
 6. Provide manual validation scenarios when automated tests are not in scope.
 7. Report any validation that could not be run.
+8. Update the stage note with actual evidence before proposing the next stage.
 
 ### 7. Recheck Coverage
 

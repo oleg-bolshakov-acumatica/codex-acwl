@@ -60,9 +60,10 @@ When version-specific behavior matters:
 6. Diagnose root cause from Jira, Wiki, docs, repository development guidance, code, tests, and optional SQL evidence.
 7. Establish root-cause origin via `root-cause-origin-analysis` before the fix plan: identify the introducing feature/ChangeRequest/PR/commit and its Jira item with a concrete `path:line@commit` link. This is mandatory to attempt and mandatory to report; if the origin cannot be established, state that explicitly with the reason (see the skill's "Not established" / "Not applicable" outcomes). Inability to establish origin does not block the fix.
 8. Confirm the fix remains small, clear, and safely validatable.
-9. Implement the minimal change.
-10. Run focused validation.
-11. Report root cause, root-cause origin (or why it is not established), fix, validation, and limitations.
+9. Record a concise diagnosis-and-fix plan in the Jira session notes and obtain explicit approval before editing. Include root-cause evidence, exact bounded change, affected lifecycle/exposed paths, regression scenario, and residual risk.
+10. Implement the approved minimal change.
+11. Run focused validation.
+12. Update the note with implementation and validation evidence; report root cause, root-cause origin (or why it is not established), fix, validation, and limitations.
 
 For customer-backup or data-dependent bugs, capture database/server/backup/tenant/`COMPANYID` when present. Use tenant-scoped SQL for tenant-partitioned tables and do not treat cross-tenant matches as confirmation.
 
@@ -74,6 +75,8 @@ Stop and report instead of implementing when:
 - validation is not possible;
 - the fix requires schema redesign, API contract changes, broad workflow redesign, or a cross-cutting refactor;
 - the change fans out across many modules;
+- the change affects schema, a shared discriminator or contract, workflow/release/rebuild behavior, or more than one independently significant lifecycle path; reclassify it as staged feature work instead;
+- the diagnosis-and-fix plan has not been approved;
 - local architecture rules would be violated;
 - branch, baseline, or repository context cannot be identified confidently.
 

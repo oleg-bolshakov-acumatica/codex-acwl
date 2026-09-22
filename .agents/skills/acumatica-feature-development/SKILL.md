@@ -60,6 +60,15 @@ Maintain a lightweight coverage matrix for substantial features: requirement, so
 
 Use `acumatica-session-notes` for iterative work when session notes need to be created, refreshed, or updated. Keep notes focused on handoff context such as source, scope, implemented slices, files changed, decisions, validation, open questions, deferred items, and known risks.
 
+Before editing product code for a feature slice, create or refresh a stage plan in
+the Jira item's session notes and present it for explicit user review/approval.
+The plan must state the selected and excluded behavior, requirements and open
+decisions, DAC/schema and extension design, relevant lifecycle and exposed-surface
+paths, validation, and residual risk. Its status is Draft, Review requested,
+Approved, Implemented, then Validated. Do not implement a stage before it is
+Approved, and do not treat approval of one stage as approval for later stages or
+newly discovered design work.
+
 ## Iteration Workflow
 
 1. Refresh Jira, Wiki specification, comments, local docs, branch/PR context, and existing session notes when needed.
@@ -67,10 +76,11 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 3. Inventory and classify requirements as ready, ambiguous, contradictory, deferred, or rejected for the current phase.
 4. Use `acumatica-development-guidance` to retrieve only the architecture, conventions, pitfalls, build, startup, testing, or validation articles relevant to the selected repository and slice. Read exact article resources, compare them with local docs and current code, and record material conflicts.
 5. Trace relevant Acumatica data paths: entry/defaulting, validation, persist, release/posting, application/adjustment, reversal/void/delete, long operations, mass processing, recalculation/rebuild, reports/projections/inquiries, workflow, imports, API, copy/template behavior, and UI refresh.
-6. Plan a coherent business slice before editing: selected behavior, excluded scope, central extension points, affected paths, customization impact, and validation.
-7. Implement the minimal slice using existing Acumatica patterns.
-8. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope. Use applicable development guidance to select the narrowest reliable validation, but keep local build files and current-branch behavior authoritative.
-9. Recheck requirement coverage and use `acumatica-session-notes` to update relevant notes at phase boundaries.
+6. Plan a coherent business slice: selected behavior, excluded scope, central extension points, affected paths, customization impact, compatibility impact, validation, and residual risk.
+7. Record the plan in the stage note and obtain explicit approval before editing product code.
+8. Implement the approved minimal slice using existing Acumatica patterns.
+9. Validate with focused builds/checks, `git diff --check` or equivalent, path parity review, and manual scenarios when tests are not in scope. Use applicable development guidance to select the narrowest reliable validation, but keep local build files and current-branch behavior authoritative.
+10. Recheck requirement coverage and update the stage note with implementation and validation evidence before proposing the next stage.
 
 ## Implementation Rules
 
@@ -78,6 +88,11 @@ Use `acumatica-session-notes` for iterative work when session notes need to be c
 - Prefer graph-owned `protected virtual` methods for behavior that may need customization.
 - Keep normal processing and recalculation/rebuild behavior aligned.
 - Avoid database queries in frequent UI events such as `RowSelected`.
+- For a changed shared or externally consumed field, action, projection, selector,
+  status, or endpoint, identify compatibility consumers before changing its shape or
+  meaning; do not infer that a screen-only change is isolated.
+- Identify new user-facing text and classify it for localization; separately classify
+  persisted strings as fixed technical codes, variable technical keys, or user-facing text before selecting storage.
 - For reports, trace `rpx -> subreport -> report table -> DAC/projection -> source tables` before changing layout.
 - Keep report layout, migration scripts, broad workflow redesign, and automated test expansion out of scope unless explicitly included.
 - Preserve existing user changes and unrelated dirty worktree state.
@@ -94,6 +109,7 @@ Stop and report instead of implementing when:
 - local architecture rules would be violated;
 - branch, baseline, or repository context cannot be identified confidently.
 
+- the requested work is not covered by an explicitly approved stage plan.
 ## Validation Methodology
 
 Validation of a feature slice is case-specific. Propose concrete steps proportional to the slice's risk rather than following a fixed script, and agree with the user which steps the agent runs and which the user performs in their environment (see the Environment Interaction Principle in `AGENTS.md`).

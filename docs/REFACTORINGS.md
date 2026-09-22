@@ -66,7 +66,7 @@ Severity must follow user-visible, data, upgrade, security, performance, and mai
 ### REF-001: Extract Business Logic to Graph Extension
 
 **Description:**  
-Monolithic Graphs containing unrelated functionality MUST be decomposed into focused Graph Extensions. Each extension SHOULD address a single feature concern and implement `IsActive()` for feature-gating.
+Monolithic Graphs containing unrelated functionality MUST be decomposed into focused Graph Extensions. Each extension SHOULD address a single feature concern; feature- or setup-gated extensions MUST implement `IsActive()`.
 
 **When to Apply (Symptoms):**
 - Graph class exceeds 2000 lines of code
@@ -78,7 +78,7 @@ Monolithic Graphs containing unrelated functionality MUST be decomposed into foc
 
 **Core Transformation (Target State):**
 - Business logic MUST reside in `PXGraphExtension<TGraph>` classes
-- Each extension MUST implement `public static bool IsActive()` method
+- Feature- or setup-gated extensions MUST implement `public static bool IsActive()` method
 - Extension MUST NOT duplicate base Graph views or actions without override
 - Feature-specific logic MUST be isolated to single extension
 - Extensions MUST use `[PXOverride]` with delegate parameter for method overrides
@@ -98,7 +98,7 @@ Monolithic Graphs containing unrelated functionality MUST be decomposed into foc
 
 **Acceptance Criteria:**
 - Each Graph Extension addresses single functional concern
-- All extensions implement IsActive() with explicit feature check
+- Feature- or setup-gated extensions implement IsActive() with an explicit activation condition
 - No business logic remains in base Graph that belongs in extension
 - All method overrides use [PXOverride] with delegate parameter
 - Unit tests can instantiate extensions in isolation
@@ -375,10 +375,10 @@ When a data view delegate performs paging internally (e.g., windowed selects), i
 ### REF-008: Implement Meaningful IsActive() for Graph Extensions
 
 **Description:**  
-Graph Extensions SHOULD implement `public static bool IsActive()` with a meaningful activation condition (feature gating). Always-on `IsActive()` returning `true` MUST be avoided unless explicitly justified.
+Feature- or setup-gated Graph Extensions MUST implement `public static bool IsActive()` with a meaningful activation condition. Always-on `IsActive()` returning `true` MUST be avoided unless explicitly justified.
 
 **When to Apply (Symptoms):**
-- Graph Extension lacks `IsActive()`
+- Feature- or setup-gated Graph Extension lacks `IsActive()`
 - `IsActive()` exists but always returns `true` without explanation
 - Feature checks are scattered inside event handlers and actions
 - Extensions load on every screen even when a feature is not installed
@@ -799,7 +799,7 @@ Every persistent DAC MUST define a `PK` nested class for primary key and `FK` st
 - DAC MUST have `public static class FK` with relationship classes
 - FK classes MUST use `ParentDAC.PK.ForeignKeyOf<ChildDAC>.By<foreignKeyField>` pattern
 - Joins SHOULD use `FK` definitions: `.InnerJoin<Related>.On<DAC.FK.Related>`
-- Parent relationships MUST have `[PXParent(typeof(FK.Parent))]` attributes
+- Parent-owned child relationships MUST have `[PXParent(typeof(FK.Parent))]` attributes; references that must prevent deletion MUST use `[PXForeignReference]`
 
 **Why It Matters in Acumatica:**
 - PK.Find() provides optimized single-record lookup
@@ -816,7 +816,7 @@ Every persistent DAC MUST define a `PK` nested class for primary key and `FK` st
 - All persistent DACs have PK class with Find() method
 - All relationships expressed in FK class
 - Joins use FK-based syntax where applicable
-- Parent-child relationships use [PXParent] with FK reference
+- Parent-owned child relationships use [PXParent] with FK reference, and deletion-restricting references use [PXForeignReference]
 
 **Related Acumatica Mechanisms:**
 `PrimaryKeyOf<T>.By<>`, `ForeignKeyOf<T>.By<>`, `[PXParent]`, `[PXForeignReference]`, `[PXDBDefault]`
@@ -824,7 +824,7 @@ Every persistent DAC MUST define a `PK` nested class for primary key and `FK` st
 **Common Anti-Patterns Nearby:**
 - Manual key lookup with PXSelect instead of PK.Find()
 - Joins with explicit field comparisons
-- Missing cascade delete for child records
+- Missing declarative parent or deletion-restricting relationship attributes
 
 ---
 
@@ -1439,7 +1439,7 @@ Every DAC MUST inherit from `PXBqlTable` and implement `IBqlTable`. DACs using l
 
 **Core Transformation (Target State):**
 - Ensure DAC declaration follows: `public class MyDAC : PXBqlTable, IBqlTable`
-- Keep existing attributes (`[Serializable]`, `[PXCacheName]`, etc.)
+- Keep required DAC attributes such as `[PXCacheName]`; do not add `[Serializable]` to DACs.
 
 **Why It Matters in Acumatica:**
 - `PXBqlTable` provides Fluent BQL integration
@@ -1462,39 +1462,26 @@ Every DAC MUST inherit from `PXBqlTable` and implement `IBqlTable`. DACs using l
 
 ---
 
-### REF-122: Ensure DACs Are Marked Serializable
+### REF-122: Do Not Add Serializable to DACs
 
 **Priority:** Medium  
 **Importance:** High
 
 **Description:**  
-DACs MUST be decorated with `[Serializable]` to support framework serialization requirements (session state, long operations, ViewState).
+New or modified DACs and DAC extensions MUST NOT declare `[Serializable]`. Framework cache and persistence behavior must be expressed through DAC attributes, graph/cache patterns, and the supported long-operation boundary.
 
 **When to Apply (Symptoms):**
-- DAC lacks `[Serializable]` attribute
-- Serialization failures in long operations or session state
-- Analyzer warnings about missing serialization attribute
+- A new DAC copies `[Serializable]` from legacy code or an outdated template.
+- Serialization is proposed as a workaround for cache, long-operation, or session behavior.
 
 **Core Transformation (Target State):**
-- Add `[Serializable]` attribute to all DAC classes
-- Place `[Serializable]` before other class-level attributes per convention
-
-**Why It Matters in Acumatica:**
-- Framework serializes DAC instances for session state and long operations
-- Missing attribute causes runtime serialization failures
-- Architecture rules (§2.1) show `[Serializable]` as mandatory
-
-**Risks / Side Effects:**
-- None for compliant DACs
+- Remove `[Serializable]` from the new/changed DAC declaration.
+- Trace the actual cache, persistence, and long-operation contract instead.
+- Do not mass-edit unrelated legacy DACs solely for this rule.
 
 **Acceptance Criteria:**
-- All DACs have `[Serializable]` attribute
-
-**Related Acumatica Mechanisms:**
-Session state, `PXLongOperation`, DAC serialization
-
-**Common Anti-Patterns Nearby:**
-- Missing `[Serializable]` on new DACs
+- New/modified DACs and DAC extensions do not declare `[Serializable]`.
+- Required framework behavior has focused validation at its real execution boundary.
 
 ---
 
@@ -1522,14 +1509,18 @@ When modifying persistent DACs (adding fields, changing types, adding keys), the
   - Index: `[TableName_ColumnName]`
 - Match DAC attribute types to SQL types per correlation table:
 
-| DAC Attribute | SQL Type |
-|---------------|----------|
+| DAC Attribute / Value Semantics | SQL Type |
+|----------------------------------|----------|
 | `[PXDBIdentity]` | `INT NOT NULL IDENTITY` |
 | `[PXDBInt]` | `INT NULL/NOT NULL` |
-| `[PXDBString(30)]` | `NVARCHAR(30)` |
-| `[PXDBString(1, IsFixed = true)]` | `CHAR(1)` |
+| `[PXDBString(length, IsUnicode = true)]` | `NVARCHAR(length)` |
+| `[PXDBString(length, IsUnicode = false)]` | `VARCHAR(length)` |
+| `[PXDBString(length, IsUnicode = false, IsFixed = true)]` | `CHAR(length)` |
 | `[PXDBBool]` | `BIT` |
-| `[PXDBDecimal(6)]` | `DECIMAL(25,6)` |
+| Monetary amount / `[PXDBDecimal(4)]` | `DECIMAL(19,4)` |
+| Unit price, cost, weight, or volume / `[PXDBDecimal(6)]` | `DECIMAL(19,6)` |
+| Quantity / `[PXDBDecimal(6)]` | `DECIMAL(25,6)` |
+| Percent / `[PXDBDecimal(6)]` | `DECIMAL(9,6)` |
 | `[PXDBDate]` | `DATETIME` |
 | `[PXDBGuid]` | `UNIQUEIDENTIFIER` |
 | `[PXDBTimestamp]` | `TIMESTAMP NOT NULL` |
@@ -1537,7 +1528,7 @@ When modifying persistent DACs (adding fields, changing types, adding keys), the
 **Why It Matters in Acumatica:**
 - Schema drift causes deployment failures and data integrity issues
 - DatabaseModel.sqlproj is the single source of truth for database schema
-- Architecture rules (§14) make this a mandatory step
+- Architecture rules (§13) make this a mandatory step
 - Audit fields, timestamps, and keys all require SQL schema alignment
 
 **Risks / Side Effects:**
@@ -1643,6 +1634,23 @@ Persisted list values, document types, and status codes are data contracts. Exis
 **Common Anti-Patterns Nearby:**
 - Reusing an obsolete status code for a new lifecycle state
 - Updating labels without checking downstream integrations and reports
+
+### REF-126: Keep DAC Field Members Adjacent
+
+**Priority:** Medium
+**Importance:** High
+
+**Description:**
+For each DAC field, the nested BQL type, attributes, and CLR property MUST be adjacent and ordered as one field unit.
+
+**Core Transformation (Target State):**
+- Keep `public abstract class fieldName ...`, its attributes, and `public virtual ... FieldName` together.
+- Do not place another field, region, or helper between the BQL type and its property.
+
+**Acceptance Criteria:**
+- Every new or modified DAC/DAC-extension/projection field follows this order.
+
+---
 
 ### Category C: BQL & Data Access (REF-2XX)
 
@@ -2252,8 +2260,8 @@ When field assignment MUST trigger the full event chain (FieldVerifying, FieldUp
 **Core Transformation (Target State):**
 - Use `cache.SetValueExt<Field>(row, value)` when events required
 - Use `cache.SetValue<Field>(row, value)` only when bypassing events intentional
-- NEVER assign DAC properties directly when cache operations needed
-- Document intent when using SetValue over SetValueExt
+- Do not assign DAC properties directly when cache tracking or field events are required; direct assignment is allowed only for controlled initialization, internal calculations, or intentionally event-free changes
+- Document intent when using SetValue over SetValueExt or direct assignment
 
 **Why It Matters in Acumatica:**
 - SetValueExt raises FieldVerifying and FieldUpdated
@@ -2270,7 +2278,7 @@ When field assignment MUST trigger the full event chain (FieldVerifying, FieldUp
 - All field assignments use appropriate method
 - SetValue usage documented where intentional
 - Event chains execute as expected
-- No direct DAC property assignments in event handlers
+- No direct DAC property assignments in event handlers when cache tracking or field events are required
 
 **Related Acumatica Mechanisms:**
 `PXCache.SetValueExt<T>`, `PXCache.SetValue<T>`, event chain, `FieldUpdated`
@@ -2548,10 +2556,10 @@ Event handlers and view delegates MUST NOT invoke `PXAction` handlers (directly 
 
 ### REF-311: Use FieldClass for Feature-Gated Field Visibility
 
-**Priority:** Medium  
+**Priority:** Medium
 **Importance:** Medium
 
-**Description:**  
+**Description:**
 DAC fields that should only be visible when a specific feature is installed SHOULD use the `FieldClass` property of `[PXUIField]` to declaratively control visibility, rather than imperative `SetVisible` calls in every Graph's `RowSelected`.
 
 **When to Apply (Symptoms):**
@@ -2601,47 +2609,22 @@ protected virtual void _(Events.RowSelected<SOOrder> e)
 
 ---
 
-### REF-312: Do Not Invoke PXAction.Press() from Event Handlers
-
-**Priority:** High  
-**Importance:** High
+### REF-312: Detect PXAction.Press() Calls in Event Handlers
 
 **Description:**  
-Event handlers and view delegates MUST NOT invoke `PXAction` handlers by calling `.Press()` or similar methods. Instead, extract the reusable logic into a separate method and call it from both the action handler and the event handler.
-
-This refactoring extends REF-309 with an explicit focus on the `.Press()` invocation pattern which is a common codebase anti-pattern.
+A `PXAction.Press()` call from an event handler or view delegate is a specific detection signal for REF-309. Apply REF-309; this entry does not establish a separate behavioral rule.
 
 **When to Apply (Symptoms):**
 - Code calls `SomeAction.Press()` from inside an event handler or view delegate
 - Code calls `Actions["actionName"].Press()` from event handlers
-- Side effects occur in unexpected lifecycle phases
-- Recursive action invocations observed
-
-**Core Transformation (Target State):**
-- Extract action business logic into a separate `protected virtual` method on the Graph/Extension
-- Action handler calls the extracted method and returns `adapter.Get()`
-- Event handler calls the extracted method directly (if valid in that event context)
-- Do not invoke actions programmatically from events
-
-**Why It Matters in Acumatica:**
-- Actions have adapter semantics tied to UI lifecycle
-- Calling `.Press()` from events breaks lifecycle assumptions and can cause recursion
-- Extracted methods are independently testable and overridable
-
-**Risks / Side Effects:**
-- Requires careful separation of adapter-specific logic from business logic
 
 **Acceptance Criteria:**
-- No `.Press()` calls on actions from event handlers or view delegates
-- Logic is shared via extracted methods
-- Behavior remains logically equivalent
+- Each detected call is resolved according to REF-309.
 
 **Related Acumatica Mechanisms:**
 `PXAction<>`, `PXAdapter`, event pipeline
 
-**Common Anti-Patterns Nearby:**
-- Using actions as reusable "methods" from business logic
-- `Actions.PressSave()` in event handlers (see also REF-404)
+---
 
 ### Category E: Cache & Persistence (REF-4XX)
 
@@ -2840,7 +2823,7 @@ Calling `Persist()` or `Actions.PressSave()` from within event handlers creates 
 **Importance:** High
 
 **Description:**  
-Parent-child DAC relationships MUST use declarative relationship attributes (`[PXParent]`, `[PXDBDefault]`, `[PXDBChildIdentity]`) rather than imperative code for cascade defaulting, delete, and identity linking.
+Parent-child DAC relationships MUST use declarative relationship attributes (`[PXParent]`, `[PXDBDefault]`, `[PXDBChildIdentity]`), and deletion-restricting references MUST use `[PXForeignReference]`, rather than imperative code for cascade defaulting, delete, and identity linking.
 
 **When to Apply (Symptoms):**
 - Child record manually copies parent key in event handlers instead of using `[PXDBDefault]`
@@ -2849,7 +2832,8 @@ Parent-child DAC relationships MUST use declarative relationship attributes (`[P
 - Parent-child integrity not enforced declaratively
 
 **Core Transformation (Target State):**
-- Add `[PXParent(typeof(FK.ParentEntity))]` on the child DAC's foreign key field for cascade delete
+- For a parent-owned child, add `[PXParent(typeof(FK.ParentEntity))]` on the child DAC's foreign key field for cascade delete
+- For a reference that must prevent deletion, add `[PXForeignReference(typeof(FK.Entity))]`
 - Add `[PXDBDefault(typeof(ParentDAC.keyField))]` for cascade defaulting of parent key values
 - Add `[PXDBChildIdentity(typeof(ParentDAC.identityField))]` to link identity fields
 - Ensure FK class exists on child DAC (see REF-103)
@@ -2879,8 +2863,8 @@ protected virtual void _(Events.FieldDefaulting<SOLine, SOLine.orderNbr> e)
 - `[PXDBDefault]` behavior differs from `[PXDefault]` — it defaults from DB at persist time
 
 **Acceptance Criteria:**
-- Parent-child relationships use declarative attributes
-- No imperative cascade logic in event handlers for standard parent-child patterns
+- Parent-owned child relationships and deletion-restricting references use the appropriate declarative attributes
+- No imperative cascade or delete-restriction logic in event handlers for standard relationship patterns
 - FK class defines the relationship (see REF-103)
 
 **Related Acumatica Mechanisms:**
@@ -4002,7 +3986,7 @@ UI visibility, disabled fields, and workflow action availability are not authori
 | Category | Refactoring IDs |
 |----------|-----------------|
 | **A. Graph & Extensions** | REF-001, REF-002, REF-003, REF-004, REF-005, REF-006, REF-007, REF-008, REF-009, REF-010, REF-011, REF-012, REF-013, REF-014, REF-015 |
-| **B. DAC & Attributes** | REF-101, REF-102, REF-103, REF-104, REF-105, REF-106, REF-107, REF-108, REF-109, REF-110, REF-111, REF-112, REF-113, REF-114, REF-115, REF-116, REF-117, REF-118, REF-119, REF-120, REF-121, REF-122, REF-123, REF-124, REF-125 |
+| **B. DAC & Attributes** | REF-101, REF-102, REF-103, REF-104, REF-105, REF-106, REF-107, REF-108, REF-109, REF-110, REF-111, REF-112, REF-113, REF-114, REF-115, REF-116, REF-117, REF-118, REF-119, REF-120, REF-121, REF-122, REF-123, REF-124, REF-125, REF-126 |
 | **C. BQL & Data Access** | REF-201, REF-202, REF-203, REF-204, REF-205, REF-206, REF-207, REF-208, REF-209, REF-210, REF-211 |
 | **D. Events & Business Logic** | REF-301, REF-302, REF-303, REF-304, REF-305, REF-306, REF-307, REF-308, REF-309, REF-310, REF-311, REF-312 |
 | **E. Cache & Persistence** | REF-401, REF-402, REF-403, REF-404, REF-405 |
@@ -4056,7 +4040,7 @@ For automated agent detection, the following code patterns indicate potential re
 | `PXDBCalced`/`PXDBScalar` without unbound type attribute | REF-116 |
 | `new SomeGraph()` in static method | REF-014 |
 | `: IBqlTable` without `PXBqlTable` | REF-121 |
-| DAC class without `[Serializable]` | REF-122 |
+| DAC class declaring `[Serializable]` | REF-122 |
 | DAC field added without SQL update | REF-123 |
 | `.On<T.field.IsEqual<U.field>>` where FK exists | REF-208 |
 | `SelectFrom<>.View` used read-only | REF-209 |
