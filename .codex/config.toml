@@ -30,8 +30,32 @@ url = "https://wmcp.acumatica.com/mcp"
 tool_timeout_sec = 60
 
 [mcp_servers.bitbucket-internal]
-url = "https://mcpsgw.acumatica.com/bitbucket"
+url = "https://mcp-gateway.acumatica.com/bitbucket"
 tool_timeout_sec = 60
 
 [mcp_servers.bitbucket-internal.tools.whoami]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_pull_request]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_pull_request_changes]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_pull_request_jira_issues]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_pull_request_file_diff]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.list_pull_request_commits]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.list_pull_request_comments]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_file_content]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_pull_request_merge_status]
 approval_mode = "approve"
