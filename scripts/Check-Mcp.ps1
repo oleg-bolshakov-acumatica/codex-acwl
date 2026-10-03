@@ -26,7 +26,7 @@ function Get-TomlStringValue {
         [Parameter(Mandatory)] [string]$Key
     )
 
-    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*"([^"]*)"\s*$'
+    $pattern = '(?m)^\s*' + [regex]::Escape($Key) + '\s*=\s*"([^"]*)"\s*(?:#.*)?$'
     if ($Block -match $pattern) {
         return [string]$Matches[1]
     }
@@ -111,39 +111,6 @@ function Invoke-StdioSmokeTest {
     throw "tools/list did not return a tool catalog."
 }
 
-function Test-ServerConfig {
-    param(
-        [Parameter(Mandatory)] [string]$Name,
-        [Parameter(Mandatory)] [string]$Block,
-        [string]$ExpectedCommand,
-        [string]$ExpectedCwd,
-        [string[]]$RequiredArgs = @()
-    )
-
-    $errors = @()
-    if ((Get-TomlStringValue -Block $Block -Key "command") -ne $ExpectedCommand) {
-        $errors += ("command must be {0}" -f $ExpectedCommand)
-    }
-    if ((Get-TomlStringValue -Block $Block -Key "cwd") -ne $ExpectedCwd) {
-        $errors += ("cwd must be {0}" -f $ExpectedCwd)
-    }
-
-    $args = @(Get-TomlStringArrayValue -Block $Block -Key "args")
-    foreach ($requiredArg in $RequiredArgs) {
-        if ($requiredArg -notin $args) {
-            $errors += ("args must include {0}" -f $requiredArg)
-        }
-    }
-
-    if ($errors.Count -gt 0) {
-        Write-Host ("[mcp  ] {0,-30} -> FAILED: {1}." -f $Name, ($errors -join "; "))
-        return $false
-    }
-
-    Write-Host ("[mcp  ] {0,-30} -> config OK." -f $Name)
-    return $true
-}
-
 $failures = 0
 $toml = Get-Content -LiteralPath $configPath -Raw
 $blocks = Get-McpServerBlocks -Toml $toml
@@ -174,8 +141,12 @@ if ($blocks.ContainsKey("powershell-mcp-facade")) {
         $facadeErrors += "command must be powershell"
     }
 
-    if ((Get-TomlStringValue -Block $facadeBlock -Key "cwd") -ne ".") {
-        $facadeErrors += "cwd must be ."
+    $configuredCwd = Get-TomlStringValue -Block $facadeBlock -Key "cwd"
+    $isProjectRootCwd = -not [string]::IsNullOrWhiteSpace($configuredCwd) -and
+        [System.IO.Path]::IsPathRooted($configuredCwd) -and
+        [System.IO.Path]::GetFullPath($configuredCwd).TrimEnd([char[]]@('\', '/')) -eq $projectRoot.TrimEnd([char[]]@('\', '/'))
+    if ($configuredCwd -ne "." -and -not $isProjectRootCwd) {
+        $facadeErrors += "cwd must be . or the absolute project root"
     }
 
     $args = @(Get-TomlStringArrayValue -Block $facadeBlock -Key "args")
@@ -237,13 +208,14 @@ if ($blocks.ContainsKey("jira-internal")) {
 }
 
 if ($blocks.ContainsKey("acumatica-development-guidance")) {
-    $ok = Test-ServerConfig `
-        -Name "acumatica-development-guidance" `
-        -Block ([string]$blocks["acumatica-development-guidance"]) `
-        -ExpectedCommand "powershell" `
-        -ExpectedCwd "." `
-        -RequiredArgs @("scripts/Start-StreamableHttpMcpProxy.ps1", "https://dokploy.acumatica.com/ai-kb/mcp")
-    if (-not $ok) { $failures++ }
+    $url = Get-TomlStringValue -Block ([string]$blocks["acumatica-development-guidance"]) -Key "url"
+    if ($url -eq "https://dokploy.acumatica.com/ai-kb/mcp") {
+        Write-Host ("[http ] acumatica-development-guidance -> {0}" -f $url)
+    }
+    else {
+        $failures++
+        Write-Host ("[http ] acumatica-development-guidance -> FAILED: expected https://dokploy.acumatica.com/ai-kb/mcp, got {0}" -f $url)
+    }
 }
 
 if ($blocks.ContainsKey("wiki-internal")) {
@@ -259,12 +231,12 @@ if ($blocks.ContainsKey("wiki-internal")) {
 
 if ($blocks.ContainsKey("bitbucket-internal")) {
     $url = Get-TomlStringValue -Block ([string]$blocks["bitbucket-internal"]) -Key "url"
-    if ($url -eq "https://mcpsgw.acumatica.com/bitbucket") {
+    if ($url -eq "https://mcp-gateway.acumatica.com/bitbucket") {
         Write-Host ("[http ] bitbucket-internal   -> {0}" -f $url)
     }
     else {
         $failures++
-        Write-Host ("[http ] bitbucket-internal   -> FAILED: expected https://mcpsgw.acumatica.com/bitbucket, got {0}" -f $url)
+        Write-Host ("[http ] bitbucket-internal   -> FAILED: expected https://mcp-gateway.acumatica.com/bitbucket, got {0}" -f $url)
     }
 }
 

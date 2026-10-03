@@ -1,23 +1,23 @@
+mcp_optional_startup_grace_ms = 0
+
+# Read/search files and edit ordinary workspace files without escalation, including
+# Git-tracked source files. Git metadata changes are separate from source edits:
+# .codex/rules/git-approvals.rules requires approval for Git mutation commands.
+# Writes outside the workspace and sandbox-restricted operations require approval.
+approval_policy = "on-request"
+approvals_reviewer = "user"
+sandbox_mode = "workspace-write"
+
 [mcp_servers.powershell-mcp-facade]
 command = "powershell"
-args = ["-NoProfile", "-ExecutionPolicy", "RemoteSigned", "-File", "scripts/Start-McpServer.ps1"]
-cwd = "."
+args = ["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "RemoteSigned", "-File", "scripts/Start-McpServer.ps1"]
+cwd = "D:/Work/agents-lab/codex-lab/codex-acwl" # Explicit root for daemon-launched MCP; update after moving the workspace.
 startup_timeout_sec = 20
 tool_timeout_sec = 60
 enabled_tools = ["sql.select", "sql.list_databases", "sql.search_schema", "sql.describe_table", "server.describe_capabilities"]
 
 [mcp_servers.acumatica-development-guidance]
-command = "powershell"
-args = [
-  "-NoProfile",
-  "-ExecutionPolicy",
-  "Bypass",
-  "-File",
-  "scripts/Start-StreamableHttpMcpProxy.ps1",
-  "-Url",
-  "https://dokploy.acumatica.com/ai-kb/mcp",
-]
-cwd = "."
+url = "https://dokploy.acumatica.com/ai-kb/mcp"
 startup_timeout_sec = 20
 tool_timeout_sec = 60
 

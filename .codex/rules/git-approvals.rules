@@ -1,0 +1,29 @@
+# Keep ordinary workspace reads/edits inside workspace-write. Do not add broad
+# allow rules for shells or Git: they would bypass the intended review boundary.
+# Run Git directly with workdir set to the repository and no global Git options.
+# Prefix rules cannot inspect arbitrary scripts or every possible Git spelling;
+# AGENTS.md also requires explicit approval for ALL non-read-only Git operations.
+
+git_commands = ["git", "git.exe", "C:/Program Files/Git/cmd/git.exe", "C:\\Program Files\\Git\\cmd\\git.exe"]
+
+prefix_rule(
+    pattern = [git_commands, [
+        "add", "am", "apply", "bisect", "checkout", "cherry-pick", "clean",
+        "clone", "commit", "fetch", "gc", "init", "merge", "mv", "notes",
+        "prune", "pull", "push", "rebase", "reflog", "reset", "restore",
+        "revert", "rm", "stash", "switch", "update-index", "update-ref",
+    ]],
+    decision = "prompt",
+    justification = "Git mutations require explicit user approval; source-file edits do not.",
+    match = ["git commit -m fix", "git push origin HEAD", "git fetch origin", "git add file.cs", "git switch task-branch"],
+    not_match = ["git status --short", "git diff --check", "git log --oneline", "git show HEAD"],
+)
+
+# These commands combine read-only and mutating modes. Prompt only for the
+# common mutation flags; inspection such as git branch --show-current stays local.
+prefix_rule(pattern = [git_commands, "branch", ["-d", "-D", "-m", "-M", "-c", "-C", "-f", "--delete", "--move", "--copy", "--force", "--set-upstream-to", "--unset-upstream"]], decision = "prompt", justification = "Changing branches or branch metadata requires user approval.")
+prefix_rule(pattern = [git_commands, "tag", ["-a", "-s", "-u", "-d", "-f", "--annotate", "--sign", "--local-user", "--delete", "--force"]], decision = "prompt", justification = "Changing tags requires user approval.")
+prefix_rule(pattern = [git_commands, "remote", ["add", "remove", "rm", "rename", "set-url", "set-head", "set-branches", "update", "prune"]], decision = "prompt", justification = "Changing remotes or remote refs requires user approval.")
+prefix_rule(pattern = [git_commands, "worktree", ["add", "remove", "move", "prune", "repair", "lock", "unlock"]], decision = "prompt", justification = "Changing worktrees requires user approval.")
+prefix_rule(pattern = [git_commands, "submodule", ["add", "deinit", "init", "update", "set-branch", "set-url", "sync", "absorbgitdirs", "foreach"]], decision = "prompt", justification = "Changing submodules requires user approval.")
+prefix_rule(pattern = [git_commands, "config", ["set", "unset", "rename-section", "remove-section", "--add", "--replace-all", "--unset", "--unset-all", "--rename-section", "--remove-section", "--edit", "-e"]], decision = "prompt", justification = "Changing Git configuration requires user approval.")

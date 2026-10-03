@@ -19,7 +19,7 @@ Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local 
 If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths. Globally installed Codex servers may also appear in `/mcp` and are outside this workspace contract:
 
 - `powershell-mcp-facade` is a stdio facade over the local `db-proxy` backend at `http://127.0.0.1:8765` (see `db-proxy/`). `scripts/Start-Codex.ps1` auto-starts `db-proxy` before the session. The server can fail SQL tool calls when that backend is not running; handle such failures as backend availability issues.
-- `acumatica-development-guidance` is a read-only streamable-HTTP server reached through `scripts/Start-StreamableHttpMcpProxy.ps1`. Its unavailability is not a blocker unless the missing guidance materially affects the conclusion.
+- `acumatica-development-guidance` is a read-only streamable-HTTP server reached directly by Codex. Its unavailability is not a blocker unless the missing guidance materially affects the conclusion.
 - `jira-internal`, `wiki-internal`, and `bitbucket-internal` are remote HTTP MCP servers that require OAuth on first use and are only reachable from the Acumatica corporate network with private access enabled.
 
 Run `scripts/Check-Mcp.ps1` to validate the MCP configuration, smoke-test the local SQL facade, and probe the `db-proxy` backend. Do not manually launch the facade as a bootstrap step; let Codex manage the configured project MCP servers. The `db-proxy` backend is started automatically by `scripts/Start-Codex.ps1`.
@@ -92,6 +92,24 @@ This workspace is intentionally tailored for the Projects/Construction team. PM/
 Mention missing relevant docs in the final result and continue with available sources.
 
 ## Shared Evidence and Safety Rules
+
+### Routine file access and Git approvals
+
+- Run ordinary local reads, directory listings, searches (`rg`, `Select-String`),
+  and edits of workspace files with the default sandbox permissions. Git-tracked
+  source files are ordinary workspace files; editing them is not a Git mutation.
+  Do not request approval merely because a file is tracked by Git.
+- Request sandbox escalation only after a relevant operation fails because of an
+  actual sandbox restriction, or when its target is known to require escalation.
+  Prefer `apply_patch` for edits and the command's `workdir` for repository access.
+- Every non-read-only Git operation still needs explicit user approval. Run Git
+  mutation commands directly from the repository working directory, with the
+  subcommand immediately after `git`, so the project command rules can match.
+  Do not hide Git mutations behind shell scripts, aliases, `git -c`, or `git -C`,
+  or treat a previously saved allow rule as approval for a new Git mutation.
+- Stage-plan/business approvals remain separate from routine file-access
+  approvals. Once a stage is approved, do not ask again for each ordinary edit
+  within that stage.
 
 - Never invent facts, business requirements, or code behavior.
 - Separate facts from hypotheses. Fact means confirmed by Jira, Wiki, docs, code, tests, local git change set, or read-only SQL.
