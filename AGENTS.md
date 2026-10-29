@@ -13,7 +13,7 @@ Prefer starting Codex through `scripts/Start-Codex.ps1`, which starts the local 
 - `powershell-mcp-facade` - read-only **SQL only** facade (`sql.select`, database discovery, and schema metadata) over the local `db-proxy` backend (stdio). It exposes no Jira, Wiki, or PR tools.
 - `acumatica-development-guidance` - optional read-only repository guidance for architecture, conventions, build, testing, validation, and review.
 - `jira-internal` - internal Jira HTTP MCP server; the primary path for Jira reads (`jira_get_issue`, `jira_search`).
-- `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools).
+- `wiki-internal` - internal Confluence/Wiki HTTP MCP server; the primary path for Wiki reads (`confluence_get_page`, `confluence_get_comments`, and related read tools) and explicitly authorized technical-specification publication.
 - `bitbucket-internal` - internal read-only Bitbucket HTTP MCP server for pull-request metadata, diffs, discussions, commits, and delivery evidence.
 
 If `/mcp` does not show all expected workspace servers, treat it as an MCP configuration or backend-availability problem, not a reason to bypass the approved paths. Globally installed Codex servers may also appear in `/mcp` and are outside this workspace contract:
@@ -32,7 +32,7 @@ Use only the designated repository skills for external context:
 
 - `jira-access` for Jira issue reads through `jira-internal`.
 - `jira-similar-search` for likely similar Bugs or Support Requests (agent-driven JQL through `jira-internal`, ranked locally).
-- `wiki-access` for `wiki.acumatica.com` pages through `wiki-internal`, including footer and inline comments.
+- `wiki-access` for `wiki.acumatica.com` reads through `wiki-internal`, including footer and inline comments; `acumatica-technical-specification` owns explicitly authorized publication of technical specifications through the same server.
 - `bitbucket-pr-access` for one specific Bitbucket/Stash pull request through `bitbucket-internal`.
 - `local-change-access` for a specific change set (branch or commit/ref range) inspected with git over the local `code/` repository.
 - `acumatica-git-workflow` for Jira-related branch/commit discovery and approval-gated Git mutations.
@@ -44,16 +44,20 @@ Do not bypass these paths with direct REST, provider modules, ad hoc scripts, br
 Do not request approval for read-only SQL needed for diagnosis.
 Do not perform Jira, Wiki, Bitbucket, or database actions beyond the read-only actions described by the corresponding skills. Local source/Git changes are allowed only within the write-capable modes (`acumatica-small-bugfix`, `acumatica-feature-development`, `acumatica-bug-backport`) and follow their approval rules.
 
+The sole Wiki-write exception is the bounded publication workflow in `acumatica-technical-specification`, when the user requests or approves publication/update of the identified technical specification. A plan, assessment, or draft request alone does not authorize publication. Use only `wiki-internal`, honor server policy, and do not bypass rejected writes.
+
 ## Mode Router
 
-Use high-level workflow skills for task-specific context. Load only the relevant mode skill:
+Use high-level workflow skills for task-specific context. Select the relevant primary mode and load supporting skills only when that workflow needs them:
 
 - `acumatica-support-request-analysis` - Support Request analysis for the Projects/Construction team: Jira title/description/comments, related items, read-only SQL diagnostics, source-code analysis, root cause, workaround, iteration gate, and Jira comment draft.
 - `acumatica-code-review` - read-only review of a pull request, branch, or diff against Jira intent, architecture, domain, migration, database, test, and maintainability risk.
 - `acumatica-spec-verification` - read-only verification that a pull request or implementation covers a functional specification from Jira and/or Wiki before QA.
+- `acumatica-feature-final-review` - read-only final review of a Projects/Construction feature after iterative development, with separate functional coverage and technical/architectural reconciliation passes, available QA feedback, and assessment of accumulated complexity before handoff or merge.
 - `acumatica-small-bugfix` - minimal low-risk correction for a narrow defect when expected behavior, base branch, and validation are sufficiently clear.
 - `acumatica-bug-backport` - approval-gated creation of a local Service Pack or Patch backport branch and commit from an existing source fix and existing backport Bug; stops before push, pull request, Jira workflow changes, or cascade merge.
 - `acumatica-feature-development` - iterative feature implementation from a Jira item and functional specification, with scope ledger and requirement coverage.
+- `acumatica-technical-specification` - create or update concise technical design documentation from functional requirements and verified implementation evidence or an explicitly proposed design, including database/DAC definitions, component responsibilities, processing flows, and authorized publication through `wiki-internal`.
 - `functional-spec-risk-analysis` - read-only analysis of a functional specification before implementation for contradictions, ambiguity, lifecycle gaps, persistence/source-of-truth risk, and Acumatica implementability.
 
 If the user's task does not fit one of these modes, perform the maximum safe analysis, state what is missing, and avoid guessing or implementing unsafely.
@@ -63,7 +67,8 @@ If the user's task does not fit one of these modes, perform the maximum safe ana
 Accepted inputs include Jira ticket ID, Support Request ID, functional specification source or Wiki URL, branch name, commit/ref range, pull request URL or coordinates, bug description, failing test name, exception message, stack trace, database backup/environment details, or Acumatica screen/table/API references.
 
 When Jira context is available, use it. For code review, a specific pull request, branch, or commit range is sufficient input; derive the linked Jira item from PR metadata, branch naming, or commit messages when available instead of asking the user. Resolve a PR through `bitbucket-pr-access`; a numeric PR ID without repository coordinates must be resolved from a URL or Jira Development data first.
-For specification verification and feature development, a functional specification is required. Use Jira requirements when they are complete enough; otherwise use a linked/provided Wiki specification or ask the user for the specification source.
+For specification verification, feature development, and final feature review, a functional specification is required. Use Jira requirements when they are complete enough; otherwise use a linked/provided Wiki specification or ask the user for the specification source. Final review uses the latest effective specification and accepted amendments; include QA Acceptance issues when available, but their absence alone does not block the review.
+For technical specification work, establish the functional requirements and whether the document describes verified implementation or a proposed design. A draft request does not authorize Wiki publication; follow `acumatica-technical-specification` for the bounded publication workflow when the user requests or approves it.
 
 ## Repository and Local Sources
 
@@ -142,6 +147,8 @@ it changes schema, a shared discriminator or contract, workflow/release/rebuild
 behavior, or more than one independently significant lifecycle path.
 
 If data is insufficient, still perform the maximum useful analysis, list what is missing, state hypotheses as hypotheses, and provide a validation plan instead of guessing.
+
+A requested final feature review uses `acumatica-feature-final-review` before handoff or merge. Route product corrections back through `acumatica-feature-development` and the applicable stage approvals, including approvals already given. Technical specification work documents the design; it does not replace functional verification or authorize product changes.
 
 ## Environment Interaction Principle
 

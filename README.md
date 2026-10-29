@@ -52,7 +52,7 @@ workspace-owned source for these servers.
 | --- | --- | --- |
 | `powershell-mcp-facade` | stdio | Read-only SQL only. Backend: local `db-proxy` at `127.0.0.1:8765`. |
 | `jira-internal` | http | Internal Jira read path. |
-| `wiki-internal` | http | Internal Confluence/Wiki read path. |
+| `wiki-internal` | http | Confluence/Wiki reads and explicitly authorized technical-specification publication. |
 | `bitbucket-internal` | http | Internal read-only Bitbucket pull-request path. |
 
 The remote HTTP services require the Acumatica corporate network and any
@@ -195,8 +195,10 @@ High-level workflow skills:
 - `acumatica-support-request-analysis`
 - `acumatica-code-review`
 - `acumatica-spec-verification`
+- `acumatica-feature-final-review`
 - `acumatica-small-bugfix`
 - `acumatica-feature-development`
+- `acumatica-technical-specification`
 - `functional-spec-risk-analysis`
 
 Lower-level access and analysis skills include `jira-access`, `wiki-access`,
@@ -213,7 +215,12 @@ must go through the declared MCP servers and repository skills. SQL is limited
 to read-only `SELECT` through `powershell-mcp-facade`; `db-proxy` enforces this
 at the backend.
 
-The write-capable workflows are limited to local source edits in
-`acumatica-small-bugfix` and `acumatica-feature-development`, and they follow
-their own scope and validation rules in `AGENTS.md` and the corresponding
-skills.
+Local source/Git changes are allowed only in the bugfix, feature-development,
+and backport workflows, under the approval rules in `AGENTS.md` and the
+corresponding skills.
+
+`acumatica-technical-specification` also supports bounded Wiki publication
+through `wiki-internal` when the user requests or approves publication/update
+of the identified specification. A plan, assessment, or draft request alone
+does not authorize a Wiki write. `wiki-access` remains read-only; publication
+does not authorize product changes or other external writes.

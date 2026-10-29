@@ -7,7 +7,9 @@ description: Use this skill when the user asks to retrieve, inspect, or interpre
 
 ## Purpose and Safety
 
-Retrieve and interpret Acumatica Wiki content through the approved read-only `wiki-internal` MCP server. Never edit pages, create or resolve comments, upload attachments, change permissions, or call direct Confluence/Wiki REST.
+Retrieve and interpret Acumatica Wiki content through the approved `wiki-internal` MCP server using read-only tools. Never edit pages, create or resolve comments, upload attachments, change permissions, or call direct Confluence/Wiki REST.
+
+This access skill remains read-only. For publication/update of an identified technical specification explicitly requested or approved by the user, use the separate bounded workflow in `acumatica-technical-specification`; it grants no permission for unrelated Wiki changes.
 
 Call the `confluence_*` read tools directly without extra user confirmation when credentials are available. There is no Wiki tool in `powershell-mcp-facade`; do not substitute browser scraping, provider modules, or ad hoc scripts.
 

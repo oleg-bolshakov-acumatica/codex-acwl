@@ -1,0 +1,4 @@
+interface:
+  display_name: "Acumatica Feature Final Review"
+  short_description: "Check feature consistency after iterative changes"
+  default_prompt: "Use $acumatica-feature-final-review to review this P&C feature for design consistency, standard Acumatica patterns, and remaining defects."

@@ -59,3 +59,15 @@ approval_mode = "approve"
 
 [mcp_servers.bitbucket-internal.tools.get_pull_request_merge_status]
 approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.list_pull_request_activities]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.list_pull_request_tasks]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.get_commit_builds]
+approval_mode = "approve"
+
+[mcp_servers.bitbucket-internal.tools.browse_repository]
+approval_mode = "approve"

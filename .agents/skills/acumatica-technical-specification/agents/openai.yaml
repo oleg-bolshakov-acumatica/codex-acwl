@@ -1,0 +1,4 @@
+interface:
+  display_name: "Acumatica Technical Specification"
+  short_description: "Write concise Acumatica technical design specifications"
+  default_prompt: "Use $acumatica-technical-specification to create or update a concise technical specification from the functional specification and verified source code."
